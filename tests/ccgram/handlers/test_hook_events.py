@@ -158,10 +158,10 @@ class TestDispatchHookEvent:
 
 
 class TestHandleStop:
-    async def test_updates_status_without_touching_topic_emoji(self, bindings) -> None:
+    async def test_updates_status_without_touching_topic_icon(self, bindings) -> None:
         bot = AsyncMock(spec=Bot)
         with (
-            patch("ccgram.handlers.hook_events.update_topic_emoji") as mock_emoji,
+            patch("ccgram.handlers.hook_events.update_topic_icon") as mock_emoji,
             patch("ccgram.handlers.hook_events.enqueue_status_update") as mock_enqueue,
         ):
             event = _make_event(event_type="Stop", data={"stop_reason": "done"})
@@ -653,7 +653,7 @@ class TestHandleSessionEnd:
             patch(
                 "ccgram.session_lifecycle.window_store.clear_window_session",
             ) as mock_clear_session,
-            patch("ccgram.handlers.hook_events.update_topic_emoji") as mock_emoji,
+            patch("ccgram.handlers.hook_events.update_topic_icon") as mock_emoji,
             patch("ccgram.handlers.hook_events.enqueue_status_update") as mock_enqueue,
             patch(
                 "ccgram.handlers.polling.polling_state.terminal_poll_state.clear_seen_status"
@@ -705,7 +705,7 @@ class TestHandleSessionEnd:
                 return_value="project",
             ),
             patch("ccgram.session_lifecycle.window_store.clear_window_session"),
-            patch("ccgram.handlers.hook_events.update_topic_emoji"),
+            patch("ccgram.handlers.hook_events.update_topic_icon"),
             patch("ccgram.handlers.hook_events.enqueue_status_update"),
             patch(
                 "ccgram.handlers.polling.polling_state.terminal_poll_state.clear_seen_status"
@@ -731,7 +731,7 @@ class TestHandleSessionEnd:
             patch(
                 "ccgram.session_lifecycle.window_store.clear_window_session",
             ),
-            patch("ccgram.handlers.hook_events.update_topic_emoji"),
+            patch("ccgram.handlers.hook_events.update_topic_icon"),
             patch("ccgram.handlers.hook_events.enqueue_status_update"),
             patch(
                 "ccgram.handlers.polling.polling_state.terminal_poll_state.clear_seen_status"

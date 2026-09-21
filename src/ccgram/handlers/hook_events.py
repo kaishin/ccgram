@@ -29,7 +29,7 @@ from .interactive import (
 )
 from .messaging_pipeline.message_queue import enqueue_status_update
 from .polling.polling_state import reset_window_polling_state
-from .status.topic_emoji import update_topic_emoji
+from .status.topic_icon import update_topic_icon
 
 
 logger = structlog.get_logger()
@@ -343,7 +343,7 @@ async def _handle_session_end(event: HookEvent, client: TelegramClient) -> None:
         reset_window_polling_state(window_id)
         chat_id = thread_router.resolve_chat_id(user_id, thread_id)
         display = thread_router.get_display_name(window_id)
-        await update_topic_emoji(client, chat_id, thread_id, "done", display)
+        await update_topic_icon(client, chat_id, thread_id, "done", display)
         await enqueue_status_update(
             client, user_id, window_id, None, thread_id=thread_id
         )

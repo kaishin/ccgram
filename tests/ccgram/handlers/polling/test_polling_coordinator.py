@@ -330,7 +330,7 @@ class TestDoesNotImportPerWindowModules:
             "interactive_ui",
             "message_queue",
             "message_sender",
-            "topic_emoji",
+            "topic_icon",
             "transcript_discovery",
             "recovery_callbacks",
             "claude_task_state",

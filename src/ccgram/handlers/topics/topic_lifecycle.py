@@ -142,7 +142,7 @@ async def prune_stale_state(live_windows: "list[TmuxWindow]") -> None:
 # succeed there, so disable it permanently (per process) instead of counting it
 # as a probe failure (which would suspend deleted-topic detection and re-arm on
 # every inbound message). Reset on restart; mirrors _disabled_chats in
-# handlers/status/topic_emoji.py.
+# handlers/status/topic_icon.py.
 _probe_pin_disabled: set[str] = set()
 
 # unpin_all_forum_topic_messages is a chat-admin call: Telegram flood-limits it
@@ -407,13 +407,13 @@ async def topic_edited_handler(
     if not new_name:
         return
 
-    # Lazy: same callback_helpers cycle plus status.topic_emoji ↔ topics
-    # cycle through emoji refresh callbacks.
+    # Lazy: same callback_helpers cycle plus status.topic_icon ↔ topics
+    # cycle through icon refresh callbacks.
     # Lazy: handlers.callback_helpers / handlers.status cycle
     from ..callback_helpers import get_thread_id
 
     # Lazy: handlers.callback_helpers / handlers.status cycle
-    from ..status.topic_emoji import strip_emoji_prefix, update_stored_topic_name
+    from ..status.topic_icon import strip_legacy_prefix
 
     thread_id = get_thread_id(update)
     if thread_id is None:
@@ -428,19 +428,21 @@ async def topic_edited_handler(
         logger.debug("Topic edited: no binding (thread=%d)", thread_id)
         return
 
-    clean_name = strip_emoji_prefix(new_name)
+    # Icon-only fork: titles carry no prefix in steady state, but
+    # older installs may still have stale Unicode-emoji prefixes from
+    # when the title itself was the status signal. Strip those before
+    # propagating to the tmux window name so the window follows the
+    # bare Telegram title, not the legacy prefix.
+    clean_name = strip_legacy_prefix(new_name)
 
     current_display = thread_router.get_display_name(window_id)
-    if current_display and strip_emoji_prefix(current_display) == clean_name:
-        logger.debug(
-            "Topic edited: name unchanged after strip, skipping (thread=%d)", thread_id
-        )
+    if current_display == clean_name:
+        logger.debug("Topic edited: name unchanged, skipping (thread=%d)", thread_id)
         return
 
     renamed = await tmux_manager.rename_window(window_id, clean_name)
     if renamed:
         session_manager.set_display_name(window_id, clean_name)
-        update_stored_topic_name(chat_id, thread_id, clean_name)
         logger.info(
             "Topic renamed: window %s → %r (thread=%d)",
             window_id,

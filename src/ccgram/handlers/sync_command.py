@@ -41,7 +41,7 @@ from .callback_data import CB_SYNC_DISMISS, CB_SYNC_FIX
 from .callback_registry import register
 from .cleanup import clear_topic_state
 from .messaging_pipeline.message_sender import safe_edit, safe_reply
-from .status.topic_emoji import sync_topic_name
+from .status.topic_icon import sync_topic_icon
 from .topics.topic_probe import probe_topic_exists
 from .topics.topic_orchestration import is_pending_creation
 from .topics.topic_provisioning_recovery import recover_topic_provisioning
@@ -168,7 +168,7 @@ async def _sync_live_topic_names(
 
     async def _sync_one(chat_id: int, thread_id: int, window_id: str) -> None:
         async with sem:
-            await sync_topic_name(
+            await sync_topic_icon(
                 client,
                 chat_id,
                 thread_id,

@@ -86,9 +86,9 @@ Change tool-call visibility (hide/show `tool_use`/`tool_result`):
 - `src/ccgram/handlers/messaging_pipeline/message_queue.py` (`_handle_content_task`): visibility gate before batch eligibility; hidden entries dropped before `_tool_msg_ids` registration. Hook events bypass via `StatusUpdateTask`.
 - `/toolcalls` command in `src/ccgram/handlers/messaging_pipeline/topic_commands.py` cycles mode via `tool_state` port.
 
-Change topic emoji color scheme:
+Change topic icon mapping:
 
-- `src/ccgram/handlers/status/topic_emoji.py` maps internal status (`active`/`idle`/`done`/`dead`) to Telegram color via `CCGRAM_STATUS_MODE`. Add modes by extending the mode→colorname dispatch.
+- `src/ccgram/handlers/status/topic_icon.py` maps internal status (`active`/`idle`/`done`/`dead`) plus `yolo` / `rc` overrides to a Telegram custom-emoji ID in `TOPIC_ICON_IDS`. The icon-only fork never mutates the topic title.
 
 Change PTB handler registration / lifecycle:
 

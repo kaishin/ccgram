@@ -30,7 +30,7 @@ from ...user_preferences import user_preferences
 from ... import window_query
 from ...window_state_store import CCGRAM_CREATED_WINDOW_ORIGIN
 from ..messaging_pipeline.message_sender import safe_edit, safe_send
-from ..status.topic_emoji import format_topic_name_for_mode
+
 from .directory_browser import clear_worktree_state, clear_workspace_state
 from .topic_creation_draft import (
     PENDING_THREAD_ID,
@@ -766,7 +766,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
         await context.bot.edit_forum_topic(
             chat_id=chat_id,
             message_thread_id=pending_thread_id,
-            name=format_topic_name_for_mode(created_wname, approval_mode),
+            name=created_wname,
         )
     except TelegramError as e:
         logger.debug("Failed to rename topic: %s", e)

@@ -507,7 +507,7 @@ class TestSyncLiveTopicNames:
             active -= 1
 
         with patch(
-            "ccgram.handlers.sync_command.sync_topic_name",
+            "ccgram.handlers.sync_command.sync_topic_icon",
             new=AsyncMock(side_effect=hold_call),
         ) as mock_sync:
             task = asyncio.create_task(
@@ -543,7 +543,7 @@ class TestSyncLiveTopicNames:
 
         with (
             patch(
-                "ccgram.handlers.sync_command.sync_topic_name",
+                "ccgram.handlers.sync_command.sync_topic_icon",
                 new=AsyncMock(side_effect=fail_or_block),
             ),
             patch("ccgram.handlers.sync_command.logger") as mock_logger,
@@ -709,13 +709,13 @@ class TestSyncCommand:
         with (
             patch("ccgram.handlers.sync_command.safe_reply"),
             patch(
-                "ccgram.handlers.sync_command.sync_topic_name",
+                "ccgram.handlers.sync_command.sync_topic_icon",
                 new_callable=AsyncMock,
-            ) as mock_sync_topic_name,
+            ) as mock_sync_topic_icon,
         ):
             await sync_command(update, MagicMock())
 
-        mock_sync_topic_name.assert_not_awaited()
+        mock_sync_topic_icon.assert_not_awaited()
 
 
 class TestSyncAutomaticCleanup:
@@ -1021,15 +1021,15 @@ class TestSyncFix:
             patch(
                 "ccgram.handlers.sync_command._sync_live_topic_names",
                 new_callable=AsyncMock,
-            ) as mock_sync_topic_names,
+            ) as mock_sync_topic_icons,
         ):
             await handle_sync_fix(query)
             mock_sm.sync_display_names.assert_called_once_with([])
             mock_sm.prune_stale_state.assert_called_once_with(set())
             mock_sms.prune_session_map.assert_called_once_with(set())
             mock_sm.prune_stale_window_states.assert_called_once_with(set())
-            mock_sync_topic_names.assert_awaited_once()
-            assert mock_sync_topic_names.call_args.args[1] == set()
+            mock_sync_topic_icons.assert_awaited_once()
+            assert mock_sync_topic_icons.call_args.args[1] == set()
             assert mock_sm.audit_state.call_count == 2
             assert mock_edit.call_count == 2
             assert "🔧 Fixing…" in mock_edit.call_args_list[0].args[1]

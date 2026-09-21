@@ -114,7 +114,7 @@ _SINGLETON_ALLOWLIST = frozenset(
         "status/rc_probe.py",
         "status/status_bar_actions.py",
         "status/status_bubble.py",
-        "status/topic_emoji.py",
+        "status/topic_icon.py",
         "sync_command.py",
         "text/text_handler.py",
         "toolbar/toolbar_callbacks.py",

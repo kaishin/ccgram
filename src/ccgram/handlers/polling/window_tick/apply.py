@@ -49,7 +49,7 @@ from ...messaging_pipeline.message_queue import (
     enqueue_status_update,
 )
 from ...messaging_pipeline.message_sender import safe_send
-from ...status.topic_emoji import update_topic_emoji
+from ...status.topic_icon import update_topic_icon
 from ...topics.topic_deletion import retire_topic_binding
 from ...topics.topic_orchestration import is_pending_creation
 from ..polling_state import (
@@ -135,7 +135,7 @@ async def _transition_to_idle(
     else:
         ps.mark_startup_quietly_settled(window_id)
     client = PTBTelegramClient(bot)
-    await update_topic_emoji(client, chat_id, thread_id, "idle", display)
+    await update_topic_icon(client, chat_id, thread_id, "idle", display)
     lc.clear_typing_state(user_id, thread_id)
     if not send_status:
         return
@@ -463,7 +463,7 @@ async def _apply_active_transition(
     if thread_id is not None:
         chat_id = thread_router.resolve_chat_id(user_id, thread_id)
         display = thread_router.get_display_name(window_id)
-        await update_topic_emoji(
+        await update_topic_icon(
             PTBTelegramClient(bot), chat_id, thread_id, "active", display
         )
 
@@ -488,7 +488,7 @@ async def _apply_done_transition(
     # the next tick, so a finished agent kept re-painting its topic green.
     ps.mark_seen_status(window_id)
     client = PTBTelegramClient(bot)
-    await update_topic_emoji(client, chat_id, thread_id, "done", display)
+    await update_topic_icon(client, chat_id, thread_id, "done", display)
     lc.clear_typing_state(user_id, thread_id)
     await enqueue_status_update(
         client,
@@ -515,7 +515,7 @@ async def _apply_starting_transition(
     if thread_id is not None:
         chat_id = thread_router.resolve_chat_id(user_id, thread_id)
         display = thread_router.get_display_name(window_id)
-        await update_topic_emoji(
+        await update_topic_icon(
             PTBTelegramClient(bot), chat_id, thread_id, "active", display
         )
 

@@ -34,7 +34,7 @@ from .handlers.messaging_pipeline.message_routing import handle_new_message
 from .handlers.polling.polling_coordinator import status_poll_loop
 from .handlers.polling.polling_state import terminal_poll_state
 from .handlers.shell import register_approval_callback, show_command_approval
-from .handlers.status.topic_emoji import mark_awaiting_first_paint
+from .handlers.status.topic_icon import mark_awaiting_first_paint
 from .handlers.topics.topic_orchestration import (
     adopt_unbound_windows as _adopt_unbound_windows,
 )

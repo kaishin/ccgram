@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ccgram.handlers.status.topic_emoji import _topic_names, reset_all_state
+from ccgram.handlers.status.topic_icon import reset_all_state
 from ccgram.handlers.topics.topic_lifecycle import topic_edited_handler
 
 CHAT_ID = -100
@@ -81,27 +81,51 @@ class TestTopicEditedRenamesWindow:
         mux.rename_window.assert_called_once_with(window_id, "new-name")
         session.set_display_name.assert_called_once_with(window_id, "new-name")
 
-    async def test_updates_emoji_cache(
-        self, mux: MagicMock, router: MagicMock, session: MagicMock
+
+class TestTopicEditedStripsLegacyPrefix:
+    """Migration: titles left by older ccgram installs that used the
+    Unicode-emoji prefix scheme. The handler strips the prefix before
+    propagating to the tmux window name so the window follows the
+    bare Telegram title."""
+
+    @pytest.mark.parametrize(
+        "legacy_name",
+        [
+            "\U0001f7e2 myproject",  # green
+            "\U0001f7e1 myproject",  # yellow
+            "\u2705 myproject",  # check
+            "\U0001f4a5 myproject",  # collision
+            "\U0001f3b2 myproject",  # dice
+            "\U0001f4e1 myproject",  # satellite
+            "\u26ab myproject",  # legacy ⚫
+            "\u274c myproject",  # legacy ❌
+        ],
+    )
+    async def test_legacy_prefix_is_stripped(
+        self,
+        legacy_name: str,
+        mux: MagicMock,
+        router: MagicMock,
+        session: MagicMock,
     ) -> None:
-        _topic_names[(CHAT_ID, THREAD_ID)] = "old-name"
         router.get_window_for_chat_thread.return_value = "@0"
         router.get_display_name.return_value = "old-name"
 
-        await topic_edited_handler(_make_update("new-name"), MagicMock())
+        await topic_edited_handler(_make_update(legacy_name), MagicMock())
 
-        assert _topic_names[(CHAT_ID, THREAD_ID)] == "new-name"
+        mux.rename_window.assert_called_once_with("@0", "myproject")
+        session.set_display_name.assert_called_once_with("@0", "myproject")
 
 
 class TestTopicEditedIgnoredEdits:
-    async def test_ignores_emoji_only_change(
+    async def test_ignores_unchanged_name(
         self, mux: MagicMock, router: MagicMock
     ) -> None:
-        """The bot itself wrote "🟢 myproject"; the clean name is unchanged."""
+        """No-op when Telegram reports the same name we already have."""
         router.get_window_for_chat_thread.return_value = "@0"
         router.get_display_name.return_value = "myproject"
 
-        await topic_edited_handler(_make_update("\U0001f7e2 myproject"), MagicMock())
+        await topic_edited_handler(_make_update("myproject"), MagicMock())
 
         mux.rename_window.assert_not_called()
 
@@ -122,15 +146,13 @@ class TestTopicEditedIgnoredEdits:
 
         mux.rename_window.assert_not_called()
 
-    async def test_caches_unchanged_when_rename_fails(
+    async def test_unchanged_after_failed_rename(
         self, mux: MagicMock, router: MagicMock
     ) -> None:
-        _topic_names[(CHAT_ID, THREAD_ID)] = "old-name"
         router.get_window_for_chat_thread.return_value = "@0"
         router.get_display_name.return_value = "old-name"
         mux.rename_window = AsyncMock(return_value=False)
 
         await topic_edited_handler(_make_update("new-name"), MagicMock())
 
-        assert _topic_names[(CHAT_ID, THREAD_ID)] == "old-name"
         router.set_display_name.assert_not_called()

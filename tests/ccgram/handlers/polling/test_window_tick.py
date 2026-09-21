@@ -276,7 +276,7 @@ class TestUpdateStatusInteractive:
                 new_callable=AsyncMock,
             ) as mock_enqueue,
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ),
         ):
@@ -310,7 +310,7 @@ class TestUpdateStatusActiveLine:
                 new_callable=AsyncMock,
             ) as mock_enqueue,
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ) as mock_emoji,
             patch(
@@ -356,7 +356,7 @@ class TestUpdateStatusActiveLine:
                 new_callable=AsyncMock,
             ) as mock_enqueue,
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ),
             patch(
@@ -511,7 +511,7 @@ class TestDeadWindowTopicDeleted:
         with (
             patch("ccgram.handlers.polling.window_tick.apply.thread_router", router),
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ),
             patch(
@@ -568,7 +568,7 @@ class TestDeadWindowTopicDeleted:
                 new_callable=AsyncMock,
             ) as clear_state,
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ) as update_emoji,
             patch("ccgram.handlers.topics.topic_deletion.session_manager"),

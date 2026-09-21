@@ -8,7 +8,7 @@ from ccgram.handlers.text.text_handler import (
     _bash_capture_tasks,
     cancel_bash_capture,
 )
-from ccgram.handlers.status.topic_emoji import (
+from ccgram.handlers.status.topic_icon import (
     _MAX_DISABLED_CHATS,
     _disabled_chats,
     clear_disabled_chat,

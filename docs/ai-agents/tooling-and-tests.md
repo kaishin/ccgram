@@ -23,7 +23,7 @@ Commands: `tests/ccgram/test_command_catalog.py`, `tests/ccgram/test_commands_co
 
 Hook/events: `tests/ccgram/test_hook.py`, `tests/ccgram/handlers/test_hook_events.py`, `tests/ccgram/test_session_monitor_events.py`.
 
-Cleanup/lifecycle: `tests/ccgram/handlers/test_cleanup.py`, `tests/ccgram/handlers/status/test_topic_emoji.py`, `tests/ccgram/handlers/topics/test_topic_lifecycle.py`.
+Cleanup/lifecycle: `tests/ccgram/handlers/test_cleanup.py`, `tests/ccgram/handlers/status/test_topic_icon.py`, `tests/ccgram/handlers/topics/test_topic_lifecycle.py`.
 
 Providers: `tests/ccgram/providers/test_contracts.py`, `tests/ccgram/providers/test_jsonl_providers.py`, `tests/ccgram/providers/test_autodetect.py`, `tests/ccgram/providers/test_picker_capability_drift.py` (picker commands subset + bare-name format).
 

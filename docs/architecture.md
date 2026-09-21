@@ -63,7 +63,7 @@ graph TD
         TopicsPkg["topics/<br>topic_orchestration, topic_lifecycle,<br>directory_browser, directory_callbacks,<br>topic_creation_draft, workspace_callbacks,<br>provider_mode_callbacks, window_launch_service,<br>window_callbacks, new_command, worktree"]
         TextPkg["text/<br>text_handler"]
         InteractivePkg["interactive/<br>interactive_ui, interactive_callbacks"]
-        StatusPkg["status/<br>status_bubble, status_bar_actions, topic_emoji, rc_probe"]
+        StatusPkg["status/<br>status_bubble, status_bar_actions, topic_icon, rc_probe"]
         LivePkg["live/<br>live_view, screenshot_callbacks, pane_callbacks"]
         SendPkg["send/<br>send_command, send_callbacks, send_security"]
         ToolbarPkg["toolbar/<br>toolbar_keyboard, toolbar_callbacks"]

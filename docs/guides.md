@@ -239,7 +239,7 @@ All settings accept both CLI flags and environment variables. CLI flags take pre
 | `CCGRAM_SEND_SEARCH_DEPTH`                            | `5`                            | Max directory depth for `/send` file search                                                          |
 | `CCGRAM_SEND_MAX_RESULTS`                             | `50`                           | Max file results returned by `/send` search                                                          |
 | `CCGRAM_TOOLBAR_CONFIG`                               | `~/.ccgram/toolbar.toml`       | Path to custom toolbar TOML; falls back to built-in defaults if missing                              |
-| `CCGRAM_TOPIC_EMOJI_CONFIG`                           | `~/.ccgram/topic_emoji.toml`   | Path to custom topic-emoji TOML; falls back to built-in defaults if missing                          |
+| `CCGRAM_TOPIC_EMOJI_CONFIG`                           | _(deprecated)_                  | Was the path to custom topic-emoji TOML in the title-prefix scheme; the icon-only fork does not read it |
 | `CCGRAM_STATUS_POLL_INTERVAL`                         | `1.0`                          | Status polling interval in seconds (min 0.5)                                                         |
 | `CCGRAM_YOLO_CONFIRMATION_TIMEOUT`                    | `30.0`                         | Seconds to wait for the YOLO confirmation prompt (min 1.0)                                           |
 | `CCGRAM_MINIAPP_BASE_URL`                             | _(disabled)_                   | Externally reachable HTTPS URL for the Mini App dashboard                                            |
@@ -252,38 +252,24 @@ All settings accept both CLI flags and environment variables. CLI flags take pre
 
 <!-- markdownlint-enable MD060 -->
 
-## Topic Emoji Color Scheme
+## Topic Icon
 
-Topic emojis change color to reflect agent status. The mapping between color and meaning is configurable:
+The Telegram forum-topic **icon** (not the title) reflects agent state. Icons are hardcoded custom-emoji IDs — there is no per-user config in this fork.
 
-| Mode               | 🟢 Green                        | 🟡 Yellow        | When to pick                       |
-| ------------------ | ------------------------------- | ---------------- | ---------------------------------- |
-| `system` (default) | agent is working                | agent is idle    | "is anything running right now?"   |
-| `user`             | agent is idle / ready for input | agent is working | "does anything need my attention?" |
+| State        | When shown                                  |
+| ------------ | ------------------------------------------- |
+| `active`     | agent is running a tool, thinking, etc.     |
+| `idle`       | agent is paused and waiting for input       |
+| `done`       | agent exited normally (Stop event, prompt)  |
+| `dead`       | terminal session closed unexpectedly        |
+| `yolo`       | YOLO / approval-skip mode (any state)       |
+| `rc`         | Remote Control active (any state, overrides `yolo`) |
 
-Set globally via `CCGRAM_STATUS_MODE=user` or `--status-mode user`. Invalid values fall back to `system`.
+Selection priority: `rc > yolo > state`. Telegram allows only one `icon_custom_emoji` per topic, so the most-specific signal wins.
 
-### Customizing the Glyphs
+The topic **title is left untouched** across state transitions — only the icon changes. Titles carrying stale Unicode-emoji prefixes from earlier ccgram installs are stripped on first icon update so the topic converges to the bare name over one Bot API cycle.
 
-The four state glyphs (`active`, `idle`, `done`, `dead`) can be replaced per mode via a TOML file at `~/.ccgram/topic_emoji.toml` (auto-detected) or at `$CCGRAM_TOPIC_EMOJI_CONFIG`. See [`docs/examples/topic_emoji.toml`](examples/topic_emoji.toml) for a fully annotated example.
-
-```toml
-[topic_emoji.system]
-active = "🚀"
-idle   = "💤"
-done   = "✅"
-dead   = "💥"
-
-[topic_emoji.user]
-active = "💤"
-idle   = "🚀"
-done   = "✅"
-dead   = "💥"
-```
-
-Missing keys fall back to the built-in default for that state; `done` and `dead` glyphs are shared between modes unless you override both tables. Malformed entries are logged and skipped — the loader never raises. The full default scheme is in `src/ccgram/topic_emoji_config.py`.
-
-Legacy dead-emoji cleanup (`strip_emoji_prefix` for titles left by older versions) can be extended via `[topic_emoji.legacy_dead].emojis = [...]`. The platform defaults are always preserved; user entries are appended.
+To use different icons, edit `TOPIC_ICON_IDS` in `src/ccgram/handlers/status/topic_icon.py`. The IDs are global Telegram custom-emoji identifiers; the bot must be able to resolve them via `getForumTopicIconStickers` (typically requires a Premium sticker pack on the bot-owning account).
 
 ## Status Bubble Visibility
 

@@ -390,7 +390,7 @@ def _tick_env(
         mocks.set_interactive_mode = _patch(_APPLY + "set_interactive_mode")
         mocks.clear_interactive_mode = _patch(_APPLY + "clear_interactive_mode")
         _patch(_APPLY + "window_query")
-        _patch(_APPLY + "update_topic_emoji")
+        _patch(_APPLY + "update_topic_icon")
         _patch(_APPLY + "_send_typing_throttled")
         _patch(_APPLY + "get_interactive_window", return_value=interactive_window)
         _patch(_APPLY + "get_subagent_names", return_value=list(subagents))
@@ -414,7 +414,7 @@ class TestTransitionToIdle:
 
         bot = AsyncMock(spec=Bot)
         with (
-            patch("ccgram.handlers.polling.window_tick.apply.update_topic_emoji"),
+            patch("ccgram.handlers.polling.window_tick.apply.update_topic_icon"),
             patch(
                 "ccgram.handlers.polling.window_tick.apply.enqueue_status_update"
             ) as mock_enqueue,
@@ -448,7 +448,7 @@ class TestQuietStartupSettlement:
 
         with (
             patch(
-                "ccgram.handlers.polling.window_tick.apply.update_topic_emoji",
+                "ccgram.handlers.polling.window_tick.apply.update_topic_icon",
                 new_callable=AsyncMock,
             ) as mock_emoji,
             patch(
@@ -506,7 +506,7 @@ class TestQuietStartupSettlement:
         )
 
         with (
-            patch("ccgram.handlers.polling.window_tick.apply.update_topic_emoji"),
+            patch("ccgram.handlers.polling.window_tick.apply.update_topic_icon"),
             patch(
                 "ccgram.handlers.polling.window_tick.apply.enqueue_status_update",
                 new_callable=AsyncMock,
@@ -548,7 +548,7 @@ class TestSettledWindowsStaySettled:
         runtime = PollingRuntime.create()
         bot = AsyncMock(spec=Bot)
         with (
-            patch("ccgram.handlers.polling.window_tick.apply.update_topic_emoji"),
+            patch("ccgram.handlers.polling.window_tick.apply.update_topic_icon"),
             patch("ccgram.handlers.polling.window_tick.apply.enqueue_status_update"),
             patch(
                 "ccgram.handlers.polling.window_tick.apply.thread_router"

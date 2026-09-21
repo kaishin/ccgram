@@ -82,7 +82,6 @@ def _bind_env(window: MagicMock | None = None) -> Iterator[_BindMocks]:
         patch(f"{_MODULE}thread_router") as router,
         patch(_FIND_WINDOW, new_callable=AsyncMock, return_value=window) as find_window,
         patch(f"{_MODULE}safe_edit") as edit,
-        patch(f"{_MODULE}format_topic_name_for_mode"),
     ):
         router.resolve_chat_id.return_value = -100
         session.get_approval_mode.return_value = "normal"

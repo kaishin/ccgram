@@ -16,7 +16,6 @@ from pathlib import Path
 
 from telegram import CallbackQuery, Chat, Update
 from telegram.error import TelegramError
-from ... import window_query
 from ...telegram_client import PTBTelegramClient, TelegramClient
 from ...session import session_manager
 from ...thread_router import thread_router
@@ -36,7 +35,7 @@ from .directory_browser import (
 )
 from ..callback_registry import register
 from ..messaging_pipeline.message_sender import safe_edit, safe_send
-from ..status.topic_emoji import format_topic_name_for_mode
+
 from ..user_state import PENDING_THREAD_ID, PENDING_THREAD_TEXT
 
 if TYPE_CHECKING:
@@ -63,16 +62,14 @@ def _store_group_chat_id(
 
 
 async def _rename_forum_topic(
-    client: TelegramClient, chat_id: int, thread_id: int, display: str, window_id: str
+    client: TelegramClient, chat_id: int, thread_id: int, display: str
 ) -> None:
     """Rename a topic in either a forum or a private topic chat."""
     try:
         await client.edit_forum_topic(
             chat_id=chat_id,
             message_thread_id=thread_id,
-            name=format_topic_name_for_mode(
-                display, window_query.get_approval_mode(window_id)
-            ),
+            name=display,
         )
     except TelegramError as exc:
         logger.debug("Failed to rename topic: %s", exc)
@@ -262,7 +259,6 @@ async def _handle_bind(
         thread_router.resolve_chat_id(user_id, thread_id),
         thread_id,
         display,
-        selected_wid,
     )
 
     await safe_edit(

@@ -52,7 +52,7 @@ from ..callback_data import CB_RESUME_CANCEL, CB_RESUME_PAGE, CB_RESUME_PICK
 from ..callback_helpers import get_thread_id
 from ..callback_registry import register
 from ..messaging_pipeline.message_sender import safe_edit, safe_reply
-from ..status.topic_emoji import format_topic_name_for_mode
+
 from ..user_state import RESUME_SESSIONS
 
 if TYPE_CHECKING:
@@ -784,9 +784,7 @@ async def _handle_pick(
         await client.edit_forum_topic(
             chat_id=thread_router.resolve_chat_id(user_id, thread_id),
             message_thread_id=thread_id,
-            name=format_topic_name_for_mode(
-                created_wname, window_query.get_approval_mode(created_wid)
-            ),
+            name=created_wname,
         )
     except TelegramError as e:
         logger.debug("Failed to rename topic: %s", e)
