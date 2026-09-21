@@ -170,6 +170,21 @@ make check         # lint, format, typecheck, test
 make test-e2e      # end-to-end tests (requires agent CLIs; see docs/guides.md#e2e-tests)
 ```
 
+### Running this fork as the live bridge
+
+The local bridge is a per-user LaunchAgent (`com.kaishin.ccgram-bridge`) that runs
+`uv run ccgram run` from this checkout, so the venv re-syncs from `uv.lock` on every
+start. The released `ccgram` binary is not installed. After landing changes here,
+restart the bridge with:
+
+```bash
+launchctl kickstart -k gui/$(id -u)/com.kaishin.ccgram-bridge
+```
+
+KeepAlive crash-loops (10s throttle) on broken imports until fixed. Logs:
+`~/Library/Logs/com.kaishin.ccgram-bridge.log` and `-error.log`. For a one-off CLI
+invocation from this fork, use `uv run ccgram <command>` instead of `ccgram`.
+
 ---
 
 ## License
