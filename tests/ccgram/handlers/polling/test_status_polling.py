@@ -2366,12 +2366,12 @@ class TestUpdateStatusMessage:
 
     async def test_uses_pyte_result_instead_of_the_provider_regex(self) -> None:
         bot = AsyncMock(spec=Bot)
-        pyte_status = StatusUpdate(raw_text="Reading file", display_label="📖 reading…")
+        pyte_status = StatusUpdate(raw_text="Reading file", display_label="Reading…")
         with _tick_env(pyte_result=pyte_status) as env:
             await _update_status(bot, 1, "@0", thread_id=42)
         env.provider.parse_terminal_status.assert_not_called()
         env.enqueue.assert_called_once()
-        assert env.enqueue.call_args[0][3] == "📖 Reading file"
+        assert env.enqueue.call_args[0][3] == "Reading file"
 
     async def test_falls_back_to_the_provider_with_pyte_rendered_text(self) -> None:
         bot = AsyncMock(spec=Bot)
@@ -2427,7 +2427,7 @@ class TestUpdateStatusMessage:
                 "◼ Spawn review agents\n"
                 "◻ Collect agent results"
             ),
-            display_label="⚡ running…",
+            display_label="Running…",
         )
         with _tick_env(pyte_result=pyte_status) as env:
             await _update_status(bot, 1, "@0", thread_id=42)

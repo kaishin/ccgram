@@ -13,7 +13,6 @@ from ccgram.terminal_parser import (
     is_likely_spinner,
     parse_status_block,
     parse_status_line,
-    status_emoji_prefix,
     strip_pane_chrome,
 )
 
@@ -529,40 +528,40 @@ class TestFormatStatusDisplay:
     @pytest.mark.parametrize(
         ("raw", "expected"),
         [
-            ("Reading src/foo.py", "\U0001f4d6 reading\u2026"),
-            ("Thinking about the problem", "\U0001f9e0 thinking\u2026"),
-            ("Reasoning through options", "\U0001f9e0 thinking\u2026"),
-            ("Editing main.py line 42", "\u270f\ufe0f editing\u2026"),
-            ("Writing to file", "\U0001f4dd writing\u2026"),
-            ("Running bash command", "\u26a1 running\u2026"),
-            ("Searching for pattern", "\U0001f50d searching\u2026"),
-            ("grep -r foo .", "\U0001f50d searching\u2026"),
-            ("glob **/*.py", "\U0001f4c2 searching\u2026"),
-            ("Building the project", "\U0001f3d7\ufe0f building\u2026"),
-            ("compiling module", "\U0001f3d7\ufe0f building\u2026"),
-            ("Installing dependencies", "\U0001f4e6 installing\u2026"),
-            ("Fetching remote refs", "\U0001f310 fetching\u2026"),
-            ("git push origin main", "\u2b06\ufe0f pushing\u2026"),
-            ("git pull --rebase", "\u2b07\ufe0f pulling\u2026"),
-            ("git clone https://repo", "\U0001f4cb cloning\u2026"),
-            ("git commit -m msg", "\U0001f4be committing\u2026"),
-            ("Deploying to prod", "\U0001f680 deploying\u2026"),
-            ("Debugging crash", "\U0001f41b debugging\u2026"),
-            ("Formatting code", "\U0001f9f9 formatting\u2026"),
-            ("Linting files", "\U0001f9f9 linting\u2026"),
-            ("Downloading artifact", "\u2b07\ufe0f downloading\u2026"),
-            ("Uploading results", "\u2b06\ufe0f uploading\u2026"),
-            ("Testing connection", "\U0001f9ea testing\u2026"),
-            ("Deleting old files", "\U0001f5d1\ufe0f deleting\u2026"),
-            ("Creating new module", "\u2728 creating\u2026"),
-            ("Checking types", "\u2705 checking\u2026"),
-            ("Updating dependencies", "\U0001f504 updating\u2026"),
-            ("Analyzing output", "\U0001f52c analyzing\u2026"),
-            ("Parsing JSON", "\U0001f50d parsing\u2026"),
-            ("Verifying results", "\u2705 verifying\u2026"),
-            ("esc to interrupt \u00b7 working", "\u2699\ufe0f working\u2026"),
-            ("Something completely novel", "\u2699\ufe0f working\u2026"),
-            ("", "\u2699\ufe0f working\u2026"),
+            ("Reading src/foo.py", "Reading\u2026"),
+            ("Thinking about the problem", "Thinking\u2026"),
+            ("Reasoning through options", "Thinking\u2026"),
+            ("Editing main.py line 42", "Editing\u2026"),
+            ("Writing to file", "Writing\u2026"),
+            ("Running bash command", "Running\u2026"),
+            ("Searching for pattern", "Searching\u2026"),
+            ("grep -r foo .", "Searching\u2026"),
+            ("glob **/*.py", "Searching\u2026"),
+            ("Building the project", "Building\u2026"),
+            ("compiling module", "Building\u2026"),
+            ("Installing dependencies", "Installing\u2026"),
+            ("Fetching remote refs", "Fetching\u2026"),
+            ("git push origin main", "Pushing\u2026"),
+            ("git pull --rebase", "Pulling\u2026"),
+            ("git clone https://repo", "Cloning\u2026"),
+            ("git commit -m msg", "Committing\u2026"),
+            ("Deploying to prod", "Deploying\u2026"),
+            ("Debugging crash", "Debugging\u2026"),
+            ("Formatting code", "Formatting\u2026"),
+            ("Linting files", "Linting\u2026"),
+            ("Downloading artifact", "Downloading\u2026"),
+            ("Uploading results", "Uploading\u2026"),
+            ("Testing connection", "Testing\u2026"),
+            ("Deleting old files", "Deleting\u2026"),
+            ("Creating new module", "Creating\u2026"),
+            ("Checking types", "Checking\u2026"),
+            ("Updating dependencies", "Updating\u2026"),
+            ("Analyzing output", "Analyzing\u2026"),
+            ("Parsing JSON", "Parsing\u2026"),
+            ("Verifying results", "Verifying\u2026"),
+            ("esc to interrupt \u00b7 working", "Working\u2026"),
+            ("Something completely novel", "Working\u2026"),
+            ("", "Working\u2026"),
         ],
     )
     def test_known_patterns(self, raw: str, expected: str) -> None:
@@ -572,51 +571,22 @@ class TestFormatStatusDisplay:
         ("raw", "expected"),
         [
             pytest.param(
-                "READING file", "\U0001f4d6 reading\u2026", id="case_insensitive"
+                "READING file", "Reading\u2026", id="case_insensitive"
             ),
             pytest.param(
                 "Writing tests for module",
-                "\U0001f4dd writing\u2026",
+                "Writing\u2026",
                 id="first_word_wins",
             ),
             pytest.param(
                 "foo bar testing baz",
-                "\U0001f9ea testing\u2026",
+                "Testing\u2026",
                 id="falls_back_to_full_string",
             ),
         ],
     )
     def test_keyword_resolution(self, raw: str, expected: str) -> None:
         assert format_status_display(raw) == expected
-
-
-class TestStatusEmojiPrefix:
-    @pytest.mark.parametrize(
-        ("raw", "expected"),
-        [
-            ("Writing tests", "\U0001f4dd"),
-            ("Reading file", "\U0001f4d6"),
-            ("Running make test", "\u26a1"),
-            ("Testing connection", "\U0001f9ea"),
-            ("thinking about approach", "\U0001f9e0"),
-            ("Something unknown", "\u2699\ufe0f"),
-            ("", "\u2699\ufe0f"),
-        ],
-    )
-    def test_returns_emoji_only(self, raw: str, expected: str) -> None:
-        assert status_emoji_prefix(raw) == expected
-
-    def test_case_insensitive(self) -> None:
-        assert status_emoji_prefix("EDITING file") == "\u270f\ufe0f"
-
-    def test_first_word_priority(self) -> None:
-        assert status_emoji_prefix("Writing tests for module") == "\U0001f4dd"
-
-    def test_consistent_with_format_status_display(self) -> None:
-        raw = "Searching for imports"
-        emoji = status_emoji_prefix(raw)
-        label = format_status_display(raw)
-        assert label.startswith(emoji)
 
 
 class TestFindChromeBoundary:

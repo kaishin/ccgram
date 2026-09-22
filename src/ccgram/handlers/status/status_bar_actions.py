@@ -82,7 +82,7 @@ def build_dashboard_button(window_id: str, user_id: int) -> InlineKeyboardButton
         user_id=user_id,
     )
     url = f"{base_url.rstrip('/')}/app/{token}"
-    return InlineKeyboardButton("\U0001fa9f Dashboard", web_app=WebAppInfo(url=url))
+    return InlineKeyboardButton("Dashboard", web_app=WebAppInfo(url=url))
 
 
 @topic_state.register("window")

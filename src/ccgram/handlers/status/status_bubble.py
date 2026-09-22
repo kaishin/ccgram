@@ -6,7 +6,7 @@ worker in ``message_queue`` delegates ``StatusUpdateTask`` / ``StatusClearTask``
 here; ``convert_status_to_content`` is defined here and imported by
 ``message_queue._process_content_task``.
 
-Status-bar Row 1: [⎋ Esc] [📸 Screenshot] [📄 Last] [📥 Get File].
+Status-bar Row 1: [Esc] [Screenshot] [Last] [Get File].
 """
 
 from __future__ import annotations
@@ -75,8 +75,8 @@ def build_status_keyboard(
 
     Layout:
       Row 1 (optional): up to 2 history-recall buttons
-      Row 2: [⎋ Esc] [📸 Screenshot] [📄 Last] [📥 Get File]
-      Row 3 (optional): [🪟 Dashboard] when Mini App is enabled, user_id is set,
+      Row 2: [Esc] [Screenshot] [Last] [Get File]
+      Row 3 (optional): [Dashboard] when Mini App is enabled, user_id is set,
         and the chat is private (``is_group=False``). Telegram rejects
         ``web_app`` buttons in groups and supergroups, so the button is hidden
         there to stop every status-bubble edit from raising a TelegramError.
@@ -97,7 +97,7 @@ def build_status_keyboard(
             label = truncate_for_display(cmd, 20)
             hist_row.append(
                 InlineKeyboardButton(
-                    f"\u2191 {label}",
+                    label,
                     callback_data=compact_callback_data(
                         CB_STATUS_RECALL,
                         f"{CB_STATUS_RECALL}{window_id}:{idx}",
@@ -110,13 +110,13 @@ def build_status_keyboard(
     rows.append(
         [
             InlineKeyboardButton(
-                "\u238b Esc",
+                "Esc",
                 callback_data=compact_callback_data(
                     CB_STATUS_ESC, f"{CB_STATUS_ESC}{window_id}", window_id
                 ),
             ),
             InlineKeyboardButton(
-                "\U0001f4f8",
+                "Screenshot",
                 callback_data=compact_callback_data(
                     CB_STATUS_SCREENSHOT,
                     f"{CB_STATUS_SCREENSHOT}{window_id}",
@@ -124,7 +124,7 @@ def build_status_keyboard(
                 ),
             ),
             InlineKeyboardButton(
-                "\U0001f4c4 Last",
+                "Last",
                 callback_data=compact_callback_data(
                     CB_STATUS_LAST_REPLY,
                     f"{CB_STATUS_LAST_REPLY}{window_id}",
@@ -132,7 +132,7 @@ def build_status_keyboard(
                 ),
             ),
             InlineKeyboardButton(
-                "\U0001f4e5 Get File",
+                "Get File",
                 callback_data=compact_callback_data(
                     CB_STATUS_GET_FILE,
                     f"{CB_STATUS_GET_FILE}{window_id}",
@@ -145,7 +145,7 @@ def build_status_keyboard(
         rows.append(
             [
                 InlineKeyboardButton(
-                    "⏭ Jump to live",
+                    "Jump to live",
                     callback_data=compact_callback_data(
                         CB_STATUS_BACKLOG_JUMP,
                         f"{CB_STATUS_BACKLOG_JUMP}{window_id}",

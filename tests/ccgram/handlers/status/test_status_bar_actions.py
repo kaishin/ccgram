@@ -185,7 +185,7 @@ class TestBuildDashboardButton:
             btn = build_dashboard_button("@7", 42)
 
         assert btn is not None
-        assert btn.text == "\U0001fa9f Dashboard"
+        assert btn.text == "Dashboard"
         assert isinstance(btn.web_app, WebAppInfo)
         assert btn.web_app.url == "https://miniapp.example/app/signed-tok"
         # No trailing-slash duplication from base_url.

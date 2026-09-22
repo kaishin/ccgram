@@ -541,83 +541,74 @@ def _find_status_line_index(lines: list[str], scan_start: int) -> int | None:
 
 # ── Status display formatting ──────────────────────────────────────────
 
-# Keyword → (emoji, short verb) mapping for status display in Telegram.
+# Keyword → short verb mapping for status display in Telegram.
 # First match wins; checked against the first word, then full string as fallback.
-_STATUS_KEYWORDS: list[tuple[str, str, str]] = [
-    ("think", "\U0001f9e0", "thinking\u2026"),
-    ("reason", "\U0001f9e0", "thinking\u2026"),
-    ("test", "\U0001f9ea", "testing\u2026"),
-    ("read", "\U0001f4d6", "reading\u2026"),
-    ("edit", "\u270f\ufe0f", "editing\u2026"),
-    ("writ", "\U0001f4dd", "writing\u2026"),
-    ("search", "\U0001f50d", "searching\u2026"),
-    ("grep", "\U0001f50d", "searching\u2026"),
-    ("glob", "\U0001f4c2", "searching\u2026"),
-    ("install", "\U0001f4e6", "installing\u2026"),
-    ("runn", "\u26a1", "running\u2026"),
-    ("bash", "\u26a1", "running\u2026"),
-    ("execut", "\u26a1", "running\u2026"),
-    ("compil", "\U0001f3d7\ufe0f", "building\u2026"),
-    ("build", "\U0001f3d7\ufe0f", "building\u2026"),
-    ("lint", "\U0001f9f9", "linting\u2026"),
-    ("format", "\U0001f9f9", "formatting\u2026"),
-    ("deploy", "\U0001f680", "deploying\u2026"),
-    ("fetch", "\U0001f310", "fetching\u2026"),
-    ("download", "\u2b07\ufe0f", "downloading\u2026"),
-    ("upload", "\u2b06\ufe0f", "uploading\u2026"),
-    ("commit", "\U0001f4be", "committing\u2026"),
-    ("push", "\u2b06\ufe0f", "pushing\u2026"),
-    ("pull", "\u2b07\ufe0f", "pulling\u2026"),
-    ("clone", "\U0001f4cb", "cloning\u2026"),
-    ("debug", "\U0001f41b", "debugging\u2026"),
-    ("delet", "\U0001f5d1\ufe0f", "deleting\u2026"),
-    ("creat", "\u2728", "creating\u2026"),
-    ("check", "\u2705", "checking\u2026"),
-    ("updat", "\U0001f504", "updating\u2026"),
-    ("analyz", "\U0001f52c", "analyzing\u2026"),
-    ("analys", "\U0001f52c", "analyzing\u2026"),
-    ("pars", "\U0001f50d", "parsing\u2026"),
-    ("verif", "\u2705", "verifying\u2026"),
+_STATUS_KEYWORDS: list[tuple[str, str]] = [
+    ("think", "thinking\u2026"),
+    ("reason", "thinking\u2026"),
+    ("test", "testing\u2026"),
+    ("read", "reading\u2026"),
+    ("edit", "editing\u2026"),
+    ("writ", "writing\u2026"),
+    ("search", "searching\u2026"),
+    ("grep", "searching\u2026"),
+    ("glob", "searching\u2026"),
+    ("install", "installing\u2026"),
+    ("runn", "running\u2026"),
+    ("bash", "running\u2026"),
+    ("execut", "running\u2026"),
+    ("compil", "building\u2026"),
+    ("build", "building\u2026"),
+    ("lint", "linting\u2026"),
+    ("format", "formatting\u2026"),
+    ("deploy", "deploying\u2026"),
+    ("fetch", "fetching\u2026"),
+    ("download", "downloading\u2026"),
+    ("upload", "uploading\u2026"),
+    ("commit", "committing\u2026"),
+    ("push", "pushing\u2026"),
+    ("pull", "pulling\u2026"),
+    ("clone", "cloning\u2026"),
+    ("debug", "debugging\u2026"),
+    ("delet", "deleting\u2026"),
+    ("creat", "creating\u2026"),
+    ("check", "checking\u2026"),
+    ("updat", "updating\u2026"),
+    ("analyz", "analyzing\u2026"),
+    ("analys", "analyzing\u2026"),
+    ("pars", "parsing\u2026"),
+    ("verif", "verifying\u2026"),
 ]
 
-_DEFAULT_EMOJI = "\u2699\ufe0f"
-_DEFAULT_STATUS = f"{_DEFAULT_EMOJI} working\u2026"
+_DEFAULT_STATUS = "Working\u2026"
 
 
-def _match_status_keyword(raw_status: str) -> tuple[str, str] | None:
+def _match_status_keyword(raw_status: str) -> str | None:
     """Match raw status text against the keyword table.
 
-    Returns ``(emoji, verb)`` for the first match, or None.
+    Returns the short verb for the first match, or None.
     """
     lower = raw_status.lower()
     first_word = lower.split(maxsplit=1)[0] if lower else ""
-    for keyword, emoji, verb in _STATUS_KEYWORDS:
+    for keyword, verb in _STATUS_KEYWORDS:
         if keyword in first_word:
-            return emoji, verb
-    for keyword, emoji, verb in _STATUS_KEYWORDS:
+            return verb
+    for keyword, verb in _STATUS_KEYWORDS:
         if keyword in lower:
-            return emoji, verb
+            return verb
     return None
-
-
-def status_emoji_prefix(raw_status: str) -> str:
-    """Return just the emoji prefix for a raw status text.
-
-    Uses the same keyword table as ``format_status_display()``.
-    Returns "⚙️" if nothing matches.
-    """
-    match = _match_status_keyword(raw_status)
-    return match[0] if match else _DEFAULT_EMOJI
 
 
 def format_status_display(raw_status: str) -> str:
     """Convert raw Claude Code status text to a short display label.
 
-    Matches the first word first (so "Writing tests" → "writing…", not "testing…"),
-    then falls back to scanning the full string. Returns "working…" if nothing matches.
+    Matches the first word first (so "Writing tests" → "Writing…", not "Testing…"),
+    then falls back to scanning the full string. Returns "Working…" if nothing matches.
     """
-    match = _match_status_keyword(raw_status)
-    return f"{match[0]} {match[1]}" if match else _DEFAULT_STATUS
+    verb = _match_status_keyword(raw_status)
+    if verb is None:
+        return _DEFAULT_STATUS
+    return verb[0].upper() + verb[1:]
 
 
 # ── Remote Control detection ──────────────────────────────────────────

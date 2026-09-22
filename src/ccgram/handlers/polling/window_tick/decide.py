@@ -10,7 +10,6 @@ from __future__ import annotations
 import time
 
 from ....providers.base import StatusUpdate
-from ....terminal_parser import status_emoji_prefix
 from ..polling_types import (
     STARTUP_TIMEOUT,
     TickContext,
@@ -22,9 +21,7 @@ from ..polling_types import (
 def build_status_line(status: StatusUpdate | None) -> str | None:
     if not status or status.is_interactive:
         return None
-    if "\n" in status.raw_text:
-        return status.raw_text
-    return f"{status_emoji_prefix(status.raw_text)} {status.raw_text}"
+    return status.raw_text
 
 
 def decide_tick(ctx: TickContext) -> TickDecision:

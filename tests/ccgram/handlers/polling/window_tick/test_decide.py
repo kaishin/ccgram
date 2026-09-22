@@ -207,11 +207,9 @@ class TestBuildStatusLine:
         status = StatusUpdate(raw_text="line1\nline2", display_label="")
         assert build_status_line(status) == "line1\nline2"
 
-    def test_single_line_gets_emoji_prefix(self):
+    def test_single_line_passes_through_unchanged(self):
         result = build_status_line(StatusUpdate(raw_text="Working", display_label=""))
-        assert result is not None
-        assert result.endswith(" Working")
-        assert result != "Working"
+        assert result == "Working"
 
 
 class TestIsShellPrompt:

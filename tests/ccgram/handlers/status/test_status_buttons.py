@@ -79,9 +79,8 @@ class TestBuildStatusKeyboard:
         long_cmd = "a" * 30
         kb = build_status_keyboard("@0", history=[long_cmd])
         label = kb.inline_keyboard[0][0].text
-        assert label.startswith("↑ ")
         assert label.endswith("…")
-        assert len(label) <= 2 + 20 + 1
+        assert len(label) <= 20
 
     def test_history_long_window_id_uses_lossless_callback_token(self) -> None:
         long_id = "@" + "x" * 60
@@ -98,8 +97,8 @@ class TestBuildStatusKeyboard:
     @pytest.mark.parametrize(
         ("prefix", "label"),
         [
-            (CB_STATUS_LAST_REPLY, "\U0001f4c4 Last"),
-            (CB_STATUS_GET_FILE, "\U0001f4e5 Get File"),
+            (CB_STATUS_LAST_REPLY, "Last"),
+            (CB_STATUS_GET_FILE, "Get File"),
         ],
     )
     def test_button_label(self, prefix: str, label: str) -> None:
@@ -148,7 +147,7 @@ class TestDashboardButtonRow:
         last_row = kb.inline_keyboard[-1]
         assert len(last_row) == 1
         btn = last_row[0]
-        assert btn.text == "\U0001fa9f Dashboard"
+        assert btn.text == "Dashboard"
         assert btn.web_app is not None
         assert btn.web_app.url == "https://example.com/app/abc.def"
 
