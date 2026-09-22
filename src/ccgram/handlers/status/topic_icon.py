@@ -46,8 +46,8 @@ logger = structlog.get_logger()
 
 # Hardcoded custom-emoji IDs (Telegram Bot API ``icon_custom_emoji``).
 TOPIC_ICON_IDS: dict[str, str] = {
-    "active": "5312016608254762256",
-    "idle": "5417915203100613993",
+    "active": "5417915203100613993",
+    "idle": "5350392020785437399",
     "done": "5237699328843200968",
     "dead": "5379748062124056162",
     "rc": "5350513667144163474",
