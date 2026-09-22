@@ -520,6 +520,40 @@ async def _apply_starting_transition(
         )
 
 
+async def _apply_icon_only_transition(
+    bot: "Bot",
+    user_id: int,
+    window_id: str,
+    thread_id: int | None,
+    decision: TickDecision,
+) -> None:
+    """Apply only the topic-icon side effect of a tick decision.
+
+    Used when the message queue is non-empty: chat-message side effects
+    (status bubbles, typing, interactive UI) must stay ordered behind
+    queued output, but the topic icon is topic metadata — ordering is
+    irrelevant and the update self-dedupes via its state token.
+    """
+    if thread_id is None:
+        return
+    state = _ICON_ONLY_STATE_BY_TRANSITION.get(decision.transition)
+    if state is None:
+        return
+    chat_id = thread_router.resolve_chat_id(user_id, thread_id)
+    display = thread_router.get_display_name(window_id)
+    await update_topic_icon(
+        PTBTelegramClient(bot), chat_id, thread_id, state, display
+    )
+
+
+_ICON_ONLY_STATE_BY_TRANSITION: dict[str, str] = {
+    "active": "active",
+    "starting": "active",
+    "idle": "idle",
+    "done": "done",
+}
+
+
 async def _apply_tick_decision(
     bot: "Bot",
     user_id: int,
@@ -527,9 +561,17 @@ async def _apply_tick_decision(
     thread_id: int | None,
     decision: TickDecision,
     runtime: "PollingRuntime | None" = None,
+    *,
+    _icon_only: bool = False,
 ) -> None:
     """Apply the effects dictated by a ``TickDecision``. All I/O lives here."""
     if decision.show_recovery or decision.transition is None:
+        return
+
+    if _icon_only:
+        await _apply_icon_only_transition(
+            bot, user_id, window_id, thread_id, decision
+        )
         return
 
     if decision.transition == "active":
@@ -568,17 +610,19 @@ async def _update_status(
     *,
     _window: "TmuxWindow | None" = None,
     runtime: "PollingRuntime | None" = None,
+    _icon_only: bool = False,
 ) -> None:
     w = _window or await tmux_manager.find_window_by_id(window_id)
     if not w:
-        await enqueue_status_update(
-            PTBTelegramClient(bot),
-            user_id,
-            window_id,
-            None,
-            thread_id=thread_id,
-            transient=True,
-        )
+        if not _icon_only:
+            await enqueue_status_update(
+                PTBTelegramClient(bot),
+                user_id,
+                window_id,
+                None,
+                thread_id=thread_id,
+                transient=True,
+            )
         return
 
     pane_text = await tmux_manager.capture_pane(w.window_id, with_ansi=True)
@@ -588,21 +632,22 @@ async def _update_status(
     _check_vim_insert(window_id, pane_text, w, runtime=runtime)
     status = await _resolve_status(window_id, pane_text, w, runtime=runtime)
 
-    interactive_window = get_interactive_window(user_id, thread_id)
-    should_check_new_ui = True
+    if not _icon_only:
+        interactive_window = get_interactive_window(user_id, thread_id)
+        should_check_new_ui = True
 
-    client = PTBTelegramClient(bot)
-    if interactive_window == window_id:
-        if status is not None and status.is_interactive:
+        client = PTBTelegramClient(bot)
+        if interactive_window == window_id:
+            if status is not None and status.is_interactive:
+                return
+            await clear_interactive_msg(user_id, client, thread_id)
+            should_check_new_ui = False
+        elif interactive_window is not None:
+            await clear_interactive_msg(user_id, client, thread_id)
+
+        if should_check_new_ui and status is not None and status.is_interactive:
+            await handle_interactive_ui(client, user_id, window_id, thread_id)
             return
-        await clear_interactive_msg(user_id, client, thread_id)
-        should_check_new_ui = False
-    elif interactive_window is not None:
-        await clear_interactive_msg(user_id, client, thread_id)
-
-    if should_check_new_ui and status is not None and status.is_interactive:
-        await handle_interactive_ui(client, user_id, window_id, thread_id)
-        return
 
     ctx = build_context(window_id, w, status, runtime=runtime)
     decision = decide_tick(ctx)
@@ -613,6 +658,7 @@ async def _update_status(
         thread_id,
         decision,
         runtime=runtime,
+        _icon_only=_icon_only,
     )
 
 

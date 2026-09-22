@@ -139,8 +139,7 @@ class TestIconSelectionPriority:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["rc"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["rc"],
         )
 
     async def test_yolo_overrides_state(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,8 +157,7 @@ class TestIconSelectionPriority:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["yolo"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["yolo"],
         )
 
     async def test_rc_overrides_yolo(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -177,8 +175,7 @@ class TestIconSelectionPriority:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["rc"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["rc"],
         )
 
 
@@ -213,8 +210,7 @@ class TestInheritedTopicsRepaintImmediately:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["idle"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["idle"],
         )
 
     async def test_only_the_first_sighting_skips_the_debounce(self) -> None:
@@ -261,8 +257,7 @@ class TestUpdateTopicIcon:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=icon_id,
+            icon_custom_emoji_id=icon_id,
         )
 
     async def test_skips_same_state(self) -> None:
@@ -279,16 +274,14 @@ class TestUpdateTopicIcon:
         await _debounced_update(bot, -100, 42, "idle", "myproject")
         bot.edit_forum_topic.assert_called_once()
 
-    async def test_legacy_prefix_is_stripped_from_display_name(self) -> None:
-        """A title left over from a previous install must be cleaned
-        up on first icon update so Telegram stops showing the prefix."""
+    async def test_legacy_prefix_does_not_change_title(self) -> None:
+        """A legacy title is not included in an icon-only edit."""
         bot = AsyncMock()
         await _debounced_update(bot, -100, 42, "idle", "\U0001f7e2 myproject")
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["idle"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["idle"],
         )
 
     async def test_rapid_toggling_suppressed(self) -> None:
@@ -415,11 +408,10 @@ class TestSyncTopicIcon:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["idle"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["idle"],
         )
 
-    async def test_strips_legacy_prefix_in_sync(self) -> None:
+    async def test_legacy_prefix_does_not_change_title_in_sync(self) -> None:
         from ccgram.handlers.status.topic_icon import _topic_states
 
         bot = AsyncMock()
@@ -439,8 +431,7 @@ class TestSyncTopicIcon:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["active"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["active"],
         )
 
 
@@ -531,8 +522,7 @@ class TestRemoteControlAndYoloBadges:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["rc"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["rc"],
         )
 
     async def test_yolo_mode_uses_yolo_icon(self) -> None:
@@ -550,8 +540,7 @@ class TestRemoteControlAndYoloBadges:
         bot.edit_forum_topic.assert_called_once_with(
             chat_id=-100,
             message_thread_id=42,
-            name="myproject",
-            icon_custom_emoji=TOPIC_ICON_IDS["yolo"],
+            icon_custom_emoji_id=TOPIC_ICON_IDS["yolo"],
         )
 
 

@@ -196,7 +196,15 @@ class TestTickWindowPendingQueue:
         ):
             await tick_window(bot, 1, 100, "@0", w)
             mock_interactive.assert_called_once()
-            mock_status.assert_not_called()
+            mock_status.assert_awaited_once_with(
+                bot,
+                1,
+                "@0",
+                thread_id=100,
+                _window=w,
+                runtime=ANY,
+                _icon_only=True,
+            )
             mock_scan.assert_called_once()
             mock_shell.assert_called_once()
 

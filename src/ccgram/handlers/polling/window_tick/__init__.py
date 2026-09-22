@@ -105,6 +105,15 @@ async def tick_window(
         )
         await _scan_window_panes(bot, user_id, window_id, thread_id, runtime=rt)
         await _maybe_check_passive_shell(bot, user_id, window_id, thread_id, runtime=rt)
+        await _update_status(
+            bot,
+            user_id,
+            window_id,
+            thread_id=thread_id,
+            _window=window,
+            runtime=rt,
+            _icon_only=True,
+        )
         return
 
     await _update_status(

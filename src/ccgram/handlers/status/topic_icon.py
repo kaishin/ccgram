@@ -1,9 +1,8 @@
 """Topic icon updates via editForumTopic — icon-only fork behavior.
 
 This module replaces the previous Unicode-emoji title-prefix scheme
-with Telegram's native ``icon_custom_emoji`` parameter. The topic
-title is left unchanged across state transitions; only the icon is
-mutated.
+with Telegram's native ``icon_custom_emoji_id`` parameter. The topic
+title is never included in the edit request; only the icon is mutated.
 
 Icon selection — six custom-emoji IDs are hardcoded in
 ``TOPIC_ICON_IDS``:
@@ -16,10 +15,8 @@ Selection priority: ``rc > yolo > state``. When RC is active, the RC
 icon wins regardless of YOLO or session state. When in YOLO mode
 without RC, the YOLO icon wins. Otherwise the state icon is shown.
 
-Migration: existing topics whose titles still carry a Unicode-emoji
-prefix from a previous ccgram install are stripped on first icon
-update. The strip set is hardcoded because this fork has no
-user-customizable topic-emoji TOML.
+Topic titles are deliberately never changed. Existing titles,
+including any legacy Unicode-emoji prefixes, are left exactly as-is.
 
 Debounce, pacing, and flood-control rules are preserved from the
 title-prefix scheme:
@@ -28,9 +25,8 @@ title-prefix scheme:
   * idle   (30s): brief pauses during work don't cause flicker
   * done/dead (5s): meaningful lifecycle events fire fast
 
-The chat-edit pacing stamp and RetryAfter flood cooldown are unchanged
-— Telegram treats a name+icon rename as one Bot API call, so the same
-per-chat rate limits apply.
+The chat-edit pacing stamp and RetryAfter flood cooldown are unchanged;
+these icon edits are still subject to Telegram's per-chat rate limits.
 """
 
 import asyncio
@@ -233,7 +229,7 @@ async def _edit_topic_icon(
     chat_id: int,
     thread_id: int,
     key: tuple[int, int],
-    name: str,
+    display_name: str,
     icon_id: str,
     *,
     state_token: tuple[str, str, bool] | None = None,
@@ -243,8 +239,7 @@ async def _edit_topic_icon(
         await client.edit_forum_topic(
             chat_id=chat_id,
             message_thread_id=thread_id,
-            name=name,
-            icon_custom_emoji=icon_id,
+            icon_custom_emoji_id=icon_id,
         )
         if state_token is not None:
             _topic_states[key] = state_token
@@ -252,7 +247,7 @@ async def _edit_topic_icon(
             "Updated topic icon: chat=%d thread=%d name='%s' icon=%s",
             chat_id,
             thread_id,
-            name,
+            display_name,
             icon_id[:8] + "…",
         )
     except RetryAfter as exc:
@@ -299,7 +294,6 @@ async def sync_topic_icon(
         return
 
     key = (chat_id, thread_id)
-    clean_name = strip_legacy_prefix(display_name)
     approval_mode = _resolve_approval_mode(chat_id, thread_id)
     rc_active = _resolve_rc_mode(chat_id, thread_id)
     cached = _topic_states.get(key)
@@ -331,7 +325,7 @@ async def sync_topic_icon(
             chat_id,
             thread_id,
             key,
-            clean_name,
+            display_name,
             icon_id,
             state_token=state_token,
         )
@@ -350,17 +344,13 @@ async def update_topic_icon(
     for the debounce period before the API call is made. This prevents
     rapid active/idle flickering from generating lots of edit calls.
 
-    The topic title is passed through ``display_name`` with the legacy
-    Unicode-emoji prefix stripped (one-time migration for older
-    installs). After the first icon update, Telegram stores the bare
-    name and ``display_name`` arrives without a prefix on subsequent
-    polls.
+    The topic title is never passed to Telegram; ``display_name`` is
+    retained only for diagnostic logging.
     """
     if chat_id in _disabled_chats:
         return
 
     key = (chat_id, thread_id)
-    clean_name = strip_legacy_prefix(display_name)
 
     approval_mode = _resolve_approval_mode(chat_id, thread_id)
     rc_active = _resolve_rc_mode(chat_id, thread_id)
@@ -391,7 +381,7 @@ async def update_topic_icon(
         chat_id,
         thread_id,
         key,
-        clean_name,
+        display_name,
         icon_id,
         state_token=state_token,
     )
