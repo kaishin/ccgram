@@ -20,7 +20,7 @@ import asyncio
 import contextlib
 import structlog
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +47,7 @@ from .session_map import (
 )
 from .session_lifecycle import session_lifecycle
 from .multiplexer import multiplexer as tmux_manager
-from .multiplexer.base import canonical_window_id
+from .multiplexer.base import WindowRef, canonical_window_id
 from .multiplexer.reconciliation import list_windows_for_reconciliation
 from .multiplexer.window_liveness import note_live_windows
 from .multiplexer.topic_mapping import is_agent_topic_window
@@ -148,6 +148,12 @@ class SessionMonitor:
         self._skip_notice_receipts: dict[str, DeliveryReceipt] = {}
         self._skip_retry_attempts: dict[str, int] = {}
         self._skip_retry_at: dict[str, float] = {}
+        # Herdr topic-title watcher, invoked with each tick's reconciliation
+        # listing so bound topics follow live workspace/tab renames. Wired by
+        # bootstrap (it owns the TelegramClient); None in tests.
+        self._topic_title_sync_callback: (
+            Callable[[Sequence[WindowRef]], Awaitable[None]] | None
+        ) = None
 
     # Delegation properties for backward-compatible test access
     @property
@@ -192,6 +198,12 @@ class SessionMonitor:
 
     def set_hook_event_callback(self, callback: Callable[..., Awaitable[None]]) -> None:
         self._hook_event_callback = callback
+
+    def set_topic_title_sync_callback(
+        self, callback: Callable[[Sequence[WindowRef]], Awaitable[None]]
+    ) -> None:
+        """Install the herdr topic-title watcher for each reconciliation tick."""
+        self._topic_title_sync_callback = callback
 
     def set_skip_callbacks(
         self,
@@ -856,6 +868,50 @@ class SessionMonitor:
             deactivate_delivery_receipt(token)
             receipt.close()
 
+    async def _reconcile_window_listing(
+        self, all_windows: list[WindowRef]
+    ) -> dict[str, Any] | None:
+        """Reconcile aliases and topic titles against one confirmed listing.
+
+        Returns the session map re-read after the fold so hook routing sees
+        canonical keys. Before anything keys off these ids, let the backend
+        reconcile only aliases it explicitly attests as safe: Herdr publishes
+        no raw locator aliases, so a missing or changed session target
+        remains unresolved until an operator explicitly rebinds it.
+        """
+        # Lazy: importing session_manager at module scope forms a hard cycle
+        # on bootstrap (same reason as the loop body's other lazy imports).
+        from .session import session_manager as _sm
+
+        # Lazy: thread routing imports monitor-facing helpers.
+        from .thread_router import thread_router
+
+        _sm.reconcile_window_aliases(all_windows)
+        note_live_windows(all_windows, thread_router.all_bound_window_ids())
+        # Bound Telegram topics follow live Herdr workspace/tab renames (the
+        # renamer plugin retitles workspaces after an agent starts).
+        await self._sync_topic_titles(all_windows)
+        return await read_session_map_raw()
+
+    async def _sync_topic_titles(self, all_windows: list[WindowRef] | None) -> None:
+        """Best-effort herdr topic-title watch on this tick's reconciliation listing.
+
+        The renamer plugin retitles Herdr workspaces after an agent starts;
+        this lets bound Telegram topics follow. Herdr-only (the watcher
+        filters by herdr session targets) and fail-open on purpose: the
+        watcher never breaks this tick.
+        """
+        if (
+            all_windows is None
+            or self._topic_title_sync_callback is None
+            or getattr(tmux_manager.capabilities, "name", "") != "herdr"
+        ):
+            return
+        try:
+            await self._topic_title_sync_callback(all_windows)
+        except Exception:
+            logger.exception("Topic title sync tick failed")
+
     async def _monitor_loop(self) -> None:
         """Background poll loop."""
         logger.info("Session monitor started, polling every %ss", self.poll_interval)
@@ -896,21 +952,7 @@ class SessionMonitor:
                         "Multiplexer listing unavailable; skipping window reconciliation"
                     )
                 else:
-                    # Before anything keys off these ids, let the backend
-                    # reconcile only aliases it explicitly attests as safe.
-                    # Herdr publishes no raw locator aliases, so a missing or
-                    # changed session target remains unresolved until an
-                    # operator explicitly rebinds it.
-                    # Lazy: importing session_manager at module scope forms a
-                    # hard cycle on bootstrap (same reason as below).
-                    from .session import session_manager as _sm
-
-                    # Lazy: thread routing imports monitor-facing helpers.
-                    from .thread_router import thread_router
-
-                    _sm.reconcile_window_aliases(all_windows)
-                    note_live_windows(all_windows, thread_router.all_bound_window_ids())
-                    raw_session_map = await read_session_map_raw()
+                    raw_session_map = await self._reconcile_window_listing(all_windows)
 
                 # Dispatch only after identity convergence and the session-map
                 # re-read: hook routing is exact-bound, so consuming a canonical

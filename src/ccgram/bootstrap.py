@@ -284,6 +284,15 @@ async def start_session_monitor(application: Application) -> SessionMonitor:
 
     monitor.set_hook_event_callback(hook_event_callback)
 
+    async def topic_title_sync_callback(windows) -> None:
+        # Lazy: topic_title_sync pulls the thread_router module; bootstrap is
+        # otherwise free of it, so loading it here keeps cold imports clean.
+        from .topic_title_sync import sync_topic_titles
+
+        await sync_topic_titles(client, windows)
+
+    monitor.set_topic_title_sync_callback(topic_title_sync_callback)
+
     monitor.start()
     session_monitor = monitor
     logger.info("Session monitor started")
