@@ -13,7 +13,7 @@ import pytest
 
 from ccgram.multiplexer.base import MultiplexerCapabilities, WindowRef
 from ccgram.multiplexer.topic_mapping import (
-    format_agent_topic_prefix,
+    format_agent_topic_label,
     is_agent_topic_window,
 )
 from ccgram.session import SessionManager
@@ -122,38 +122,34 @@ class TestIsAgentTopicWindow:
         assert is_agent_topic_window(_win(AGTERM_SESSION_UUID, "claude"), AGTERM_CAPS)
 
 
-class TestFormatAgentTopicPrefix:
-    @pytest.mark.parametrize(
-        ("workspace", "tab", "expected"),
-        [
-            # Two tabs in one workspace get distinct titles (no collision).
-            ("ccgram", "herdr-support", "ccgram ▸ herdr-support"),
-            ("ccgram", "ralphex", "ccgram ▸ ralphex"),
-            # Renaming the workspace re-renders the label; the tab id is the key.
-            ("ccgram-v2", "herdr-support", "ccgram-v2 ▸ herdr-support"),
-            # Numeric / auto-generated tab labels still render usefully.
-            ("myproject", "tab-1", "myproject ▸ tab-1"),
-            ("myproject", "Tab 1", "myproject ▸ Tab 1"),
-            # Shell tab (no agent) renders the same way — label is tab name.
-            ("ccgram", "zsh", "ccgram ▸ zsh"),
-            # Missing parts degrade without a stray separator.
-            ("", "herdr-support", "herdr-support"),
-            ("ccgram", "", "ccgram"),
-            ("", "", ""),
-            # Whitespace is trimmed off every part.
-            ("  ccgram  ", "  herdr-support  ", "ccgram ▸ herdr-support"),
-        ],
-    )
-    def test_renders_workspace_tab_label(
-        self, workspace: str, tab: str, expected: str
-    ) -> None:
-        assert format_agent_topic_prefix(workspace, tab) == expected
-
-    def test_provider_prefix_is_searchable(self) -> None:
-        assert (
-            format_agent_topic_prefix("ccgram", "1", "p3", provider="pi")
-            == "Pi ▸ ccgram ▸ 1 ▸ p3"
+class TestFormatAgentTopicLabel:
+    def test_single_pane_returns_tab_label_verbatim(self) -> None:
+        """The common case: one pane per tab, no suffix noise."""
+        assert format_agent_topic_label("decide-tab-name-format", 1, "w1:t1:p1") == (
+            "decide-tab-name-format"
         )
+
+    def test_multi_pane_appends_pane_suffix(self) -> None:
+        """Disambiguate panes within the same tab."""
+        assert format_agent_topic_label("rename-without-prefix", 2, "w1:t1:p1") == (
+            "rename-without-prefix ▸ p1"
+        )
+        assert format_agent_topic_label("rename-without-prefix", 2, "w1:t1:p2") == (
+            "rename-without-prefix ▸ p2"
+        )
+
+    def test_pane_suffix_uses_short_pane_id(self) -> None:
+        """The pane_id is full locator-shaped; only the leaf is rendered."""
+        assert format_agent_topic_label("work", 3, "w7:t1:p2") == "work ▸ p2"
+
+    def test_whitespace_is_trimmed(self) -> None:
+        assert format_agent_topic_label("  herdr-support  ", 1, "w1:t1:p1") == (
+            "herdr-support"
+        )
+
+    def test_empty_tab_label_degrades_without_stray_separator(self) -> None:
+        assert format_agent_topic_label("", 1, "w1:t1:p1") == ""
+        assert format_agent_topic_label("", 2, "w1:t1:p1") == " ▸ p1"
 
 
 @pytest.fixture

@@ -69,7 +69,7 @@ from .herdr_events import (
 )
 from .herdr_commands import command_request
 from .herdr_socket import HerdrSocketError, request as socket_request
-from .topic_mapping import format_agent_topic_prefix
+from .topic_mapping import format_agent_topic_label
 
 __all__ = [
     "HERDR_PROTOCOL_VERSION",
@@ -748,8 +748,14 @@ class HerdrManager:
 
     async def _reconciliation_labels(
         self, records: Sequence[HerdrLiveRecord]
-    ) -> dict[tuple[str, str], tuple[str, str]]:
-        """Resolve best-effort display labels without using them as identity."""
+    ) -> dict[tuple[str, str], tuple[str, str, int]]:
+        """Resolve best-effort display labels without using them as identity.
+
+        Returns ``(workspace_label, tab_label, pane_count)`` per
+        ``(workspace_id, tab_id)``. The pane count is only consumed to decide
+        whether a multi-pane tab needs a pane suffix in its topic title; the
+        tab label itself is the display name.
+        """
         workspace_result = await self._call_json(["workspace", "list"])
         tab_result = await self._call_json(["tab", "list"])
         if workspace_result is None or tab_result is None:
@@ -761,24 +767,31 @@ class HerdrManager:
             and isinstance(workspace.get("workspace_id"), str)
             and isinstance(workspace.get("label"), str)
         }
-        tab_labels = {
-            tab.get("tab_id"): tab.get("label")
-            for tab in tab_result.get("tabs", [])
-            if isinstance(tab, Mapping)
-            and isinstance(tab.get("tab_id"), str)
-            and isinstance(tab.get("label"), str)
-        }
-        labels: dict[tuple[str, str], tuple[str, str]] = {}
+        tab_rows: dict[str, tuple[str, int]] = {}
+        for tab in tab_result.get("tabs", []):
+            if not isinstance(tab, Mapping):
+                continue
+            tab_id = tab.get("tab_id")
+            label = tab.get("label")
+            if not isinstance(tab_id, str) or not isinstance(label, str):
+                continue
+            pane_count = tab.get("pane_count", 1)
+            if not isinstance(pane_count, int):
+                pane_count = 1
+            tab_rows[tab_id] = (label, pane_count)
+        labels: dict[tuple[str, str], tuple[str, str, int]] = {}
         missing = 0
         for record in records:
             workspace_label = workspace_labels.get(record.workspace_id)
-            tab_label = tab_labels.get(record.tab_id)
-            if workspace_label is None or tab_label is None:
+            tab_row = tab_rows.get(record.tab_id)
+            if workspace_label is None or tab_row is None:
                 missing += 1
                 continue
+            tab_label, pane_count = tab_row
             labels[(record.workspace_id, record.tab_id)] = (
                 workspace_label,
                 tab_label,
+                pane_count,
             )
         if missing:
             logger.warning(
@@ -805,34 +818,30 @@ class HerdrManager:
                     # without labels this cannot tell an internal ``__*__``
                     # workspace or tab from an ordinary one, and adopting
                     # ccgram's own pane is the failure that guard exists for.
+                    # Use the last 12 chars of the target as an opaque,
+                    # non-ccgram-constructed fallback name.
                     refs.append(
                         self._live_ref(
                             record,
-                            format_agent_topic_prefix(
-                                "Herdr",
-                                record.target_id[-12:],
-                                provider=record.composite.agent,
-                            ),
+                            record.target_id[-12:],
                             adoptable=False,
                         )
                     )
                 continue
-            workspace_label, tab_label = label
+            workspace_label, tab_label, pane_count = label
             internal = bool(
                 _INTERNAL_LABEL_RE.match(workspace_label)
                 or _INTERNAL_LABEL_RE.match(tab_label)
             )
             if internal and not include_internal:
                 continue
-            pane = record.pane_id.rsplit(":", 1)[-1]
             refs.append(
                 self._live_ref(
                     record,
-                    format_agent_topic_prefix(
-                        workspace_label,
+                    format_agent_topic_label(
                         tab_label,
-                        pane,
-                        provider=record.composite.agent,
+                        pane_count,
+                        record.pane_id,
                     ),
                     adoptable=not internal,
                 )

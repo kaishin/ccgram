@@ -6,7 +6,7 @@ only sets a topic title at creation/bind time (``window_launch_service`` /
 ``window_callbacks``), so bound Telegram topics go stale. This module is the
 watcher: on each reconciliation tick it compares the stored ``window_name``
 of every bound thread with the live reconciliation listing's ``window_name``
-— the same ``format_agent_topic_prefix`` projection the herdr adapter already
+— the same ``format_agent_topic_label`` projection the herdr adapter already
 computes from ``herdr workspace list`` / ``herdr tab list`` labels in
 ``multiplexer/herdr.py::_project_live_refs`` — and renames the topic once the
 new label has settled.

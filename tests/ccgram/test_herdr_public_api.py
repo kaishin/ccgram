@@ -161,7 +161,7 @@ async def test_socket_listing_projects_stable_session_target(herdr_server) -> No
         HerdrSessionComposite("herdr", "claude", "id", "session-a")
     )
     assert windows[0].window_id == expected
-    assert windows[0].window_name == "Claude ▸ Workspace ▸ Tab ▸ p1"
+    assert windows[0].window_name == "Tab"
     assert windows[0].topic_eligible is True
     assert [payload["method"] for payload in requests] == [
         "agent.list",

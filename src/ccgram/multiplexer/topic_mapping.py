@@ -19,27 +19,31 @@ from __future__ import annotations
 
 from .base import MultiplexerCapabilities, WindowRef
 
-# Separates workspace, tab, and optional pane parts in a Herdr topic title.
+# Separates an optional pane suffix from the tab label in a Herdr topic title.
+# Only used for multi-pane tabs; single-pane tabs inherit the tab label verbatim.
 TOPIC_PREFIX_SEPARATOR = " ▸ "
 
 
-def format_agent_topic_prefix(
-    workspace: str, tab: str, pane: str = "", *, provider: str = ""
+def format_agent_topic_label(
+    tab_label: str, pane_count: int, pane_id: str
 ) -> str:
-    """Render a Herdr topic label with an easy-to-search provider prefix.
+    """Render a Herdr topic label from the tab's own name, verbatim.
 
-    Produces ``"<Provider> ▸ <workspace> ▸ <tab> ▸ <pane>"`` when *provider*
-    is present. Without a provider, the legacy workspace/tab label is kept.
-    The status emoji is prepended later by the topic-emoji machinery.
+    Herdr's renamer plugin produces a per-tab session topic that already names
+    the work in progress, so the topic title just inherits it. A pane suffix
+    is only appended when the tab holds more than one pane; the single-pane
+    case is the common one and the ``p1`` suffix is noise. The status emoji
+    is prepended later by the topic-emoji machinery.
 
-    Empty parts degrade gracefully so a half-populated tab never renders a
-    stray separator.
+    An empty *tab_label* degrades to the lone pane suffix when one applies,
+    or empty string otherwise, so a half-populated tab never renders a stray
+    separator.
     """
-    provider_label = provider.strip().capitalize()
-    parts = [
-        part.strip() for part in (provider_label, workspace, tab, pane) if part.strip()
-    ]
-    return TOPIC_PREFIX_SEPARATOR.join(parts)
+    tab = tab_label.strip()
+    suffix = ""
+    if pane_count > 1:
+        suffix = f"{TOPIC_PREFIX_SEPARATOR}{pane_id.rsplit(':', 1)[-1]}"
+    return f"{tab}{suffix}"
 
 
 def is_agent_topic_window(window: WindowRef, caps: MultiplexerCapabilities) -> bool:

@@ -138,25 +138,37 @@ def _sessionless(terminal_id: str = "term-a") -> dict[str, object]:
 
 
 def _live_fake(*records: Mapping[str, object]) -> FakeHerdr:
+    # Records with an agent (session or sessionless) populate the listing;
+    # bare shell records are what the herdr parser drops.
+    populated = [
+        r
+        for r in records
+        if isinstance(r.get("agent_session"), Mapping) or r.get("agent")
+    ]
     workspaces = {
         str(record.get("workspace_id", "w2")): {
             "workspace_id": record.get("workspace_id", "w2"),
             "label": "workspace",
         }
-        for record in records
+        for record in populated
     }
-    tabs = {
-        str(record.get("tab_id", "w2:t1")): {
-            "tab_id": record.get("tab_id", "w2:t1"),
+    pane_counts: dict[str, int] = {}
+    for record in populated:
+        tab_id = str(record.get("tab_id", "w2:t1"))
+        pane_counts[tab_id] = pane_counts.get(tab_id, 0) + 1
+    tabs = [
+        {
+            "tab_id": tab_id,
             "label": "tab",
+            "pane_count": pane_counts.get(tab_id, 0),
         }
-        for record in records
-    }
+        for tab_id in pane_counts
+    ]
     return (
         FakeHerdr()
         .on("agent", "list", out=_agents(*records))
         .on("workspace", "list", out=_result(workspaces=list(workspaces.values())))
-        .on("tab", "list", out=_result(tabs=list(tabs.values())))
+        .on("tab", "list", out=_result(tabs=tabs))
     )
 
 
@@ -198,7 +210,7 @@ async def test_list_windows_exposes_all_detected_agent_targets() -> None:
     windows = await _manager(_live_fake(live, bare_shell)).list_windows()
     assert [
         (win.window_id, win.window_name, win.pane_current_command) for win in windows
-    ] == [(_target("one"), "Claude ▸ workspace ▸ tab ▸ p1", "claude")]
+    ] == [(_target("one"), "tab", "claude")]
     assert all("w2:" not in win.window_id for win in windows)
 
 
@@ -220,14 +232,14 @@ async def test_multiple_agents_in_one_tab_get_pane_topics_and_no_shared_tab_alia
     windows = await _manager(_live_fake(first, second)).list_windows()
 
     assert [window.window_name for window in windows] == [
-        "Claude ▸ workspace ▸ tab ▸ p1",
-        "Claude ▸ workspace ▸ tab ▸ p2",
+        "tab ▸ p1",
+        "tab ▸ p2",
     ]
     assert [window.legacy_alias_window_ids for window in windows] == [(), ()]
     for pane, target in [("p1", _target("one")), ("p2", _target("two"))]:
         found = await _manager(_live_fake(first, second)).find_window_by_id(target)
         assert found is not None
-        assert found.window_name == f"Claude ▸ workspace ▸ tab ▸ {pane}"
+        assert found.window_name == f"tab ▸ {pane}"
         assert found.legacy_alias_window_ids == ()
 
 
@@ -362,7 +374,7 @@ async def test_find_window_requires_a_fresh_matching_session_target() -> None:
     found = await _manager(fake).find_window_by_id(_target("one"))
     assert found is not None
     assert found.window_id == _target("one")
-    assert found.window_name == "Claude ▸ workspace ▸ tab ▸ p1"
+    assert found.window_name == "tab"
     assert await _manager(fake).find_window_by_id("w2:t1") is None
     assert fake.calls == [
         ["agent", "list"],
@@ -976,7 +988,7 @@ async def test_create_topic_target_uses_selected_workspace_and_returns_session_t
         agent_args="--dangerously-skip-permissions",
     )
     assert target.target_id == _target()
-    assert target.label == "Claude ▸ selected ▸ new ▸ p1"
+    assert target.label == "new"
     assert target.window_id == "w9:t1"
     assert target.pane_id == "w9:p1"
     assert fake.calls == [
@@ -1396,7 +1408,7 @@ async def test_native_worktree_returns_session_target_or_fails_unbound(
         str(repo), str(worktree), "ccg/topic", launch_command="claude"
     )
     assert ok and target == _target()
-    assert label == "Claude ▸ selected ▸ worktree ▸ p1"
+    assert label == "worktree"
     assert ["pane", "run", "w10:p1", "claude"] in fake.calls
 
     malformed = (
@@ -1509,14 +1521,14 @@ async def test_reconciliation_keeps_internal_records_but_marks_them_unadoptable(
         _target("tab-internal"): False,
     }
     assert [(window.window_id, window.window_name) for window in windows] == [
-        (_target("visible"), "Claude ▸ workspace ▸ tab ▸ p1"),
-        (_target("workspace-internal"), "Claude ▸ __main__ ▸ tab ▸ p2"),
-        (_target("tab-internal"), "Claude ▸ workspace ▸ __worker__ ▸ p3"),
+        (_target("visible"), "tab"),
+        (_target("workspace-internal"), "tab"),
+        (_target("tab-internal"), "__worker__"),
     ]
 
     # The UI listing still hides ccgram's own panes.
     assert [(w.window_id, w.window_name) for w in await manager.list_windows()] == [
-        (_target("visible"), "Claude ▸ workspace ▸ tab ▸ p1")
+        (_target("visible"), "tab")
     ]
 
 
@@ -1550,11 +1562,11 @@ async def test_missing_label_uses_fallback_without_hiding_other_sessions() -> No
         _target("visible"),
         _target("missing"),
     ]
-    assert windows[0].window_name == "Claude ▸ workspace ▸ tab ▸ p1"
-    assert windows[1].window_name.startswith("Claude ▸ Herdr ▸ ")
+    assert windows[0].window_name == "tab"
+    assert windows[1].window_name == _target("missing")[-12:]
     found = await _manager(fake).find_window_by_id(_target("missing"))
     assert found is not None
-    assert found.window_name.startswith("Claude ▸ Herdr ▸ ")
+    assert found.window_name == _target("missing")[-12:]
 
     # An unlabeled record cannot be shown to be non-internal, so it is kept for
     # liveness and addressing but never offered for adoption.
