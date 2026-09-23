@@ -483,7 +483,7 @@ class TestParseEntries:
         result, pending = TranscriptParser.parse_entries(entries)
         tool_result_entries = [e for e in result if e.content_type == "tool_result"]
         assert len(tool_result_entries) == 1
-        assert "\u26a0\ufe0f Permission denied" in tool_result_entries[0].text
+        assert "Permission denied" in tool_result_entries[0].text
 
     def test_interrupted_tool_result(
         self,

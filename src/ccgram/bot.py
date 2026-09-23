@@ -154,7 +154,7 @@ async def _send_shutdown_notification(application: Application) -> None:
     # Lazy: only used inside the error handler
     from telegram.error import TelegramError
 
-    text = f"🔌 ccgram stopped — {reason} (v{__version__})"
+    text = f"ccgram stopped — {reason} (v{__version__})"
     try:
         await application.bot.send_message(
             chat_id=config.group_id,

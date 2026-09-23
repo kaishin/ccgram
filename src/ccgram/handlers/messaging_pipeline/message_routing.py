@@ -135,7 +135,7 @@ async def enqueue_backlog_skip_notice(client: TelegramClient, intent: object) ->
         user_id=int(getattr(intent, "user_id")),
         window_id=str(getattr(intent, "window_id")),
         parts=[
-            f"⏭ Skipped {count} queued transcript item(s) for live view "
+            f"Skipped {count} queued transcript item(s) for live view "
             f"(bytes {start}–{snapshot}). Raw transcript retained."
         ],
         thread_id=getattr(intent, "thread_id"),

@@ -71,9 +71,9 @@ class TestRenderBannerText:
     @pytest.mark.parametrize(
         ("mode", "expected_title"),
         [
-            ("dead", "⚠ Session `my-project` ended."),
-            ("restore", "\U0001f504 Restore `my-project`."),
-            ("resume", "⏪ Resume `my-project`."),
+            ("dead", "Session `my-project` ended."),
+            ("restore", "Restore `my-project`."),
+            ("resume", "Resume `my-project`."),
         ],
     )
     def test_title_names_the_mode_and_the_window(

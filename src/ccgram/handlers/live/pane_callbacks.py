@@ -60,7 +60,7 @@ logger = structlog.get_logger()
 
 _MAX_PANE_NAME_LEN = 32
 _RENAME_PROMPT = (
-    "✏️ Reply with a name for pane {pane_id} "
+    "Reply with a name for pane {pane_id} "
     f"(max {_MAX_PANE_NAME_LEN} chars). Send '-' to clear."
 )
 
@@ -100,7 +100,7 @@ def build_pane_buttons(
             ),
         ),
         InlineKeyboardButton(
-            "✏️ Rename",
+            "Rename",
             callback_data=compact_callback_data(
                 CB_PANE_RENAME, f"{CB_PANE_RENAME}{target}", window_id
             ),
@@ -204,7 +204,7 @@ async def _handle_rename(
         logger.warning("pane rename prompt failed: %s", exc)
         await query.answer("Failed to open rename prompt", show_alert=True)
         return
-    await query.answer("✏️ Rename")
+    await query.answer("Rename")
 
 
 async def apply_pane_rename(
@@ -241,7 +241,7 @@ async def apply_pane_rename(
         # they typed. They can resend a shorter version.
         await safe_reply(
             message,
-            f"❌ Name too long ({len(name)} chars, max {_MAX_PANE_NAME_LEN}).",
+            f"Name too long ({len(name)} chars, max {_MAX_PANE_NAME_LEN}).",
         )
         return True
     upsert_pane(window_id, pane_id, name=name)

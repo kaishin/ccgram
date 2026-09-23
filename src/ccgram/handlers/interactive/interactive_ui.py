@@ -404,7 +404,7 @@ def _build_interactive_keyboard(
     rows.append(
         [
             btn("⎋ Esc", CB_ASK_ESC),
-            btn("🔄", CB_ASK_REFRESH),
+            btn("Refresh", CB_ASK_REFRESH),
             btn("⏎ Enter", CB_ASK_ENTER),
         ]
     )

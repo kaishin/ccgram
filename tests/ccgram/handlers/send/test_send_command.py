@@ -248,7 +248,7 @@ class TestBuildFileBrowser:
         (tmp_path / "subdir").mkdir()
         _make_file(tmp_path / "file.txt")
         text, markup, items = build_file_browser(tmp_path, tmp_path, 0)
-        assert "\U0001f4c2" in text
+        assert text == "."
         assert isinstance(markup, InlineKeyboardMarkup)
         assert [p.name for p in items] == ["subdir", "file.txt"]
 

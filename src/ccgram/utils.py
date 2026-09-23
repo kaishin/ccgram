@@ -401,7 +401,7 @@ async def handle_general_topic_message(
         _general_topic_pin_cache[chat_id] = True
         try:
             hint = await message.reply_text(
-                "🤖 Please use a named topic. Create a new topic to start a session."
+                "Please use a named topic. Create a new topic to start a session."
             )
             await hint.pin(disable_notification=True)
         except TelegramError:

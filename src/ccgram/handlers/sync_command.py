@@ -134,11 +134,11 @@ def _issue_summary_lines(audit: AuditResult) -> list[str]:
     if retired_reasons:
         category_counts.pop("retired_topic", None)
     lines = [
-        f"⚠ {count} {_CATEGORY_LABELS.get(cat, cat)}"
+        f"{count} {_CATEGORY_LABELS.get(cat, cat)}"
         for cat, count in category_counts.items()
     ]
     lines.extend(
-        f"⚠ {count} known retired topic cleanup candidate(s) ({reason})"
+        f"{count} known retired topic cleanup candidate(s) ({reason})"
         for reason, count in retired_reasons.items()
     )
     if lines:
@@ -188,7 +188,7 @@ async def _sync_live_topic_names(
 def _retired_outcome_lines(retired_outcomes: dict[str, int] | None) -> list[str]:
     """Format explicit outcomes for locally known retired-topic cleanup."""
     return [
-        f"{'⚠' if outcome == 'failed' else 'ℹ'} "
+        f"{'failed: ' if outcome == 'failed' else ''}"
         f"{_RETIRED_OUTCOME_LABELS[outcome]} {count} known retired topic(s)"
         for outcome, count in (retired_outcomes or {}).items()
         if count
@@ -204,17 +204,17 @@ def _cleanup_unavailable_report(
     cleanup_lines = _retired_outcome_lines(retired_outcomes)
     if closed_count:
         topic_word = "topic" if closed_count == 1 else "topics"
-        cleanup_lines.insert(0, f"ℹ Removed {closed_count} stale {topic_word}")
+        cleanup_lines.insert(0, f"Removed {closed_count} stale {topic_word}")
     if manual_close_count:
         topic_word = "topic" if manual_close_count == 1 else "topics"
         cleanup_lines.insert(
             0,
-            f"⚠ {manual_close_count} {topic_word} could not be deleted; "
+            f"{manual_close_count} {topic_word} could not be deleted; "
             "cleanup retained for retry.",
         )
-    summary = "\n".join(cleanup_lines) or "ℹ No stale topics found"
+    summary = "\n".join(cleanup_lines) or "No stale topics found"
     return (
-        "✅ Cleanup applied. The multiplexer went away before the "
+        "Cleanup applied. The multiplexer went away before the "
         "after-audit, so the state summary is unavailable.\n\n" + summary
     )
 
@@ -233,22 +233,22 @@ def _format_report(
 
     if fixed_count > 0:
         issue_word = "issue" if fixed_count == 1 else "issues"
-        lines.append(f"✅ Fixed {fixed_count} {issue_word}\n")
+        lines.append(f"Fixed {fixed_count} {issue_word}\n")
     else:
-        lines.append("🔍 State audit\n")
+        lines.append("State audit\n")
 
     if closed_topic_count > 0:
         topic_word = "topic" if closed_topic_count == 1 else "topics"
-        lines.append(f"ℹ Removed {closed_topic_count} stale {topic_word}")
+        lines.append(f"Removed {closed_topic_count} stale {topic_word}")
 
     if recreated_topic_count > 0:
         topic_word = "topic" if recreated_topic_count == 1 else "topics"
-        lines.append(f"ℹ Recreated {recreated_topic_count} {topic_word}")
+        lines.append(f"Recreated {recreated_topic_count} {topic_word}")
 
     if manual_close_count > 0:
         topic_word = "topic" if manual_close_count == 1 else "topics"
         lines.append(
-            f"⚠ {manual_close_count} {topic_word} could not be deleted; "
+            f"{manual_close_count} {topic_word} could not be deleted; "
             "cleanup retained for retry. Check Delete Messages permission."
         )
 
@@ -256,13 +256,13 @@ def _format_report(
 
     # Binding summary
     if audit.total_bindings == 0:
-        lines.append("ℹ No topic bindings")
+        lines.append("No topic bindings")
     elif audit.live_binding_count == audit.total_bindings:
         lines.append(f"✓ {audit.total_bindings} topics bound, all windows alive")
     else:
         dead = audit.total_bindings - audit.live_binding_count
         lines.append(
-            f"⚠ {dead} ghost binding(s) "
+            f"{dead} ghost binding(s) "
             f"({audit.live_binding_count}/{audit.total_bindings} alive)"
         )
 
@@ -270,7 +270,7 @@ def _format_report(
     dead_topic_count = sum(1 for i in audit.issues if i.category == "dead_topic")
     if dead_topic_count > 0:
         topic_word = "topic" if dead_topic_count == 1 else "topics"
-        lines.append(f"⚠ {dead_topic_count} dead {topic_word} (deleted in Telegram)")
+        lines.append(f"{dead_topic_count} dead {topic_word} (deleted in Telegram)")
 
     lines.extend(_issue_summary_lines(audit))
 
@@ -287,7 +287,7 @@ def _format_report(
                         f"\U0001f527 Fix {fixable} {issue_word}",
                         callback_data=CB_SYNC_FIX,
                     ),
-                    InlineKeyboardButton("✕ Dismiss", callback_data=CB_SYNC_DISMISS),
+                    InlineKeyboardButton("Dismiss", callback_data=CB_SYNC_DISMISS),
                 ]
             ]
         )
@@ -640,14 +640,14 @@ async def sync_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
         chat_id=update.message.chat.id,
         thread_id=update.message.message_thread_id,
     )
-    status_msg = await safe_reply(update.message, "🔍 State audit…")
+    status_msg = await safe_reply(update.message, "State audit…")
     client = PTBTelegramClient(update.get_bot())
     audit = await _run_audit()
     if audit is None:
         if status_msg is not None:
             await safe_edit(
                 status_msg,
-                "⚠ Multiplexer unavailable. Cannot audit state right now.",
+                "Multiplexer unavailable. Cannot audit state right now.",
                 reply_markup=None,
             )
         return
@@ -662,7 +662,7 @@ async def sync_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
     # the final audit below is deliberately fresh after those mutations.
     cleanup_issues = [*audit.issues, *_retired_topic_issues()]
     if status_msg is not None:
-        await safe_edit(status_msg, "🧹 Cleaning up stale topics…", reply_markup=None)
+        await safe_edit(status_msg, "Cleaning up stale topics…", reply_markup=None)
     closed_count, manual_close_count, retired_outcomes = await _cleanup_stale_topics(
         client, cleanup_issues
     )
@@ -703,14 +703,14 @@ async def sync_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def handle_sync_fix(query: CallbackQuery) -> None:
     """Run all fix operations, re-audit, and edit message in place."""
-    await safe_edit(query, "🔧 Fixing…", reply_markup=None)
+    await safe_edit(query, "Fixing…", reply_markup=None)
 
     # A destructive repair requires a confirmed multiplexer listing.
     all_windows = await list_windows_for_reconciliation(tmux_manager)
     if all_windows is None:
         await safe_edit(
             query,
-            "⚠ Multiplexer unavailable. No state changes were made.",
+            "Multiplexer unavailable. No state changes were made.",
             reply_markup=None,
         )
         return
@@ -760,7 +760,7 @@ async def handle_sync_fix(query: CallbackQuery) -> None:
         # reporting every binding as dead would be worse than saying so.
         await safe_edit(
             query,
-            "✅ Fixes applied. The multiplexer went away before the "
+            "Fixes applied. The multiplexer went away before the "
             "after-audit, so the summary below is unavailable.",
             reply_markup=None,
         )

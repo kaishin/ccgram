@@ -97,7 +97,7 @@ def _build_keyboard(window_id: str, current: str) -> InlineKeyboardMarkup:
     rows.append(
         [
             InlineKeyboardButton(
-                "🔄 Auto",
+                "Auto",
                 callback_data=compact_callback_data(
                     CB_AGENT_SET, f"{CB_AGENT_SET}{window_id}:auto", window_id
                 ),

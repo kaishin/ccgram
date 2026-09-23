@@ -170,7 +170,7 @@ class TestForwardCommandResolution:
 
         assert (
             update.message.reply_text.call_args[0][0]
-            == "⚡ [project] Sent: /committing-code"
+            == "[project] Sent: /committing-code"
         )
 
     async def test_pi_followup_queues_followup_message(self) -> None:
@@ -183,7 +183,7 @@ class TestForwardCommandResolution:
         )
         self.mock_send_to_window.assert_not_called()
         reply_text = update.message.reply_text.call_args[0][0]
-        assert reply_text == "⏭️ [project] Follow-up queued."
+        assert reply_text == "[project] Follow-up queued."
 
     async def test_pi_followup_requires_message(self) -> None:
         self.mock_provider.capabilities.name = "pi"
@@ -664,9 +664,7 @@ class TestForwardWithRealProvider:
         await forward_command_handler(update, _make_context())
 
         reply_text = update.message.reply_text.call_args[0][0]
-        assert "🔼" in reply_text
-        assert "🔽" in reply_text
-        assert "Enter Esc" in reply_text
+        assert "Up/Down, Enter, Esc" in reply_text
 
     async def test_shell_provider_never_emits_picker_hint(self) -> None:
         from ccgram.providers.shell import ShellProvider

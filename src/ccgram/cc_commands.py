@@ -32,43 +32,43 @@ logger = structlog.get_logger()
 # to the provider (see commands/forward.py). /resume collides with bot-native
 # /resume (excluded — ccgram has its own picker).
 CC_BUILTINS: dict[str, str] = {
-    "agents": "↗ Manage subagent configurations",
-    "background": "↗ Detach session as background agent",
-    "branch": "↗ Fork conversation at current point",
-    "clear": "↗ Clear conversation context",
-    "compact": "↗ Summarize history to free context",
-    "context": "↗ Show context window usage",
-    "copy": "↗ Copy last response to clipboard",
-    "cost": "↗ Show session cost (alias /usage)",
-    "diff": "↗ Open interactive diff viewer",
-    "doctor": "↗ Diagnose Claude Code installation",
-    "effort": "↗ Adjust thinking effort level",
-    "export": "↗ Export conversation as text",
-    "feedback": "↗ Submit feedback or bug report",
-    "help": "↗ Show Claude Code help",
-    "init": "↗ Initialize CLAUDE.md in project",
-    "loop": "↗ Run prompt repeatedly on a schedule",
-    "mcp": "↗ Manage MCP server connections",
-    "memory": "↗ Edit CLAUDE.md memory files",
-    "model": "↗ Select model and effort",
-    "permissions": "↗ Manage tool permissions",
-    "plan": "↗ Enter plan mode",
-    "rc": "↗ Start remote control (alias)",
-    "recap": "↗ Summarize current session",
-    "release-notes": "↗ View changelog",
-    "remote-control": "↗ Start remote control session",
-    "review": "↗ Review pull request locally",
-    "rewind": "↗ Rewind conversation or code",
-    "security-review": "↗ Analyze pending changes for security",
-    "settings": "↗ Open Settings interface",
-    "skills": "↗ List available skills",
-    "statusline": "↗ Configure status line",
-    "status": "↗ Show session status",
-    "tasks": "↗ Manage background tasks",
-    "theme": "↗ Change color theme (picker)",
-    "tui": "↗ Switch terminal UI renderer",
-    "usage": "↗ Show usage and cost stats",
-    "verify": "↗ Build and run app to verify change",
+    "agents": "Manage subagent configurations",
+    "background": "Detach session as background agent",
+    "branch": "Fork conversation at current point",
+    "clear": "Clear conversation context",
+    "compact": "Summarize history to free context",
+    "context": "Show context window usage",
+    "copy": "Copy last response to clipboard",
+    "cost": "Show session cost (alias /usage)",
+    "diff": "Open interactive diff viewer",
+    "doctor": "Diagnose Claude Code installation",
+    "effort": "Adjust thinking effort level",
+    "export": "Export conversation as text",
+    "feedback": "Submit feedback or bug report",
+    "help": "Show Claude Code help",
+    "init": "Initialize CLAUDE.md in project",
+    "loop": "Run prompt repeatedly on a schedule",
+    "mcp": "Manage MCP server connections",
+    "memory": "Edit CLAUDE.md memory files",
+    "model": "Select model and effort",
+    "permissions": "Manage tool permissions",
+    "plan": "Enter plan mode",
+    "rc": "Start remote control (alias)",
+    "recap": "Summarize current session",
+    "release-notes": "View changelog",
+    "remote-control": "Start remote control session",
+    "review": "Review pull request locally",
+    "rewind": "Rewind conversation or code",
+    "security-review": "Analyze pending changes for security",
+    "settings": "Open Settings interface",
+    "skills": "List available skills",
+    "statusline": "Configure status line",
+    "status": "Show session status",
+    "tasks": "Manage background tasks",
+    "theme": "Change color theme (picker)",
+    "tui": "Switch terminal UI renderer",
+    "usage": "Show usage and cost stats",
+    "verify": "Build and run app to verify change",
 }
 
 # Bot-native commands (registered first, not from CC)
@@ -118,8 +118,8 @@ def _sanitize_telegram_name(name: str) -> str:
 
 
 def _cc_desc(desc: str) -> str:
-    """Ensure description has ↗ prefix for CC-forwarded commands."""
-    return desc if desc.startswith("↗") else f"↗ {desc}"
+    """Return the description for CC-forwarded commands, verbatim."""
+    return desc
 
 
 def parse_frontmatter(path: Path) -> dict[str, str]:

@@ -66,7 +66,7 @@ _pending_key_refreshes: dict[tuple[int, str], asyncio.Task[None]] = {}
 
 
 def build_dashboard_button(window_id: str, user_id: int) -> InlineKeyboardButton | None:
-    """Return the 🪟 Dashboard WebApp button, or None when Mini App is disabled.
+    """Return the Dashboard WebApp button, or None when Mini App is disabled.
 
     Mints a short-lived signed token scoped to ``(window_id, user_id)`` and
     embeds it in the URL so the Mini App can verify the request without an
@@ -402,7 +402,7 @@ async def _handle_backlog_jump(
         [
             [
                 InlineKeyboardButton(
-                    "⏭ Confirm jump to live",
+                    "Confirm jump to live",
                     callback_data=compact_callback_data(
                         CB_STATUS_BACKLOG_CONFIRM,
                         f"{CB_STATUS_BACKLOG_CONFIRM}{window_id}",

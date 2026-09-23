@@ -579,10 +579,10 @@ class AntigravityProvider(JsonlProvider):
             os.path.getsize(transcript_path) if os.path.exists(transcript_path) else 0
         )
         return (
-            f"🌀 [{display_name}] Antigravity session active.\n"
-            f"📁 `{cwd}`\n"
-            f"📄 `{os.path.basename(transcript_path)}` ({size} bytes)\n"
-            f"⭐ ID: `{session_id[:8]}`"
+            f"[{display_name}] Antigravity session active.\n"
+            f"`{cwd}`\n"
+            f"`{os.path.basename(transcript_path)}` ({size} bytes)\n"
+            f"ID: `{session_id[:8]}`"
         )
 
     def parse_transcript_entries(

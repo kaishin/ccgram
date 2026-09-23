@@ -53,7 +53,7 @@ def build_response_parts(
 
     # Format based on content type
     if content_type == "thinking":
-        prefix = "\U0001f9e0 Thinking\u2026"
+        prefix = "Thinking\u2026"
         separator = "\n"
     else:
         # Plain text: no prefix

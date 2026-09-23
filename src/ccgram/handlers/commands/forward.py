@@ -85,8 +85,8 @@ def _picker_hint(provider_name: str) -> str:
     except Exception:  # noqa: BLE001 — toolbar lookup must never break forwarding
         present = set()
     if all(k in present for k in _NAV_KEYS):
-        return "\n💡 Open /toolbar to drive the picker — 🔼 🔽 Enter Esc."
-    return "\n💡 Open /toolbar to drive the picker."
+        return "\nOpen /toolbar to drive the picker — Up/Down, Enter, Esc."
+    return "\nOpen /toolbar to drive the picker."
 
 
 def _default_command_args(cc_name: str, args: str, display: str) -> str:
@@ -137,11 +137,11 @@ async def _handle_pi_followup_command(
         user_id, window_id, thread_id, args, message.chat.id
     )
     if not success:
-        await safe_reply(message, f"❌ {error_msg}")
+        await safe_reply(message, f"{error_msg}")
         return
     if thread_id is not None:
         record_command(user_id, thread_id, cc_slash)
-    await safe_reply(message, f"⏭️ [{display}] Follow-up queued.")
+    await safe_reply(message, f"[{display}] Follow-up queued.")
 
 
 async def _handle_session_reset_command(
@@ -261,13 +261,13 @@ async def forward_command_handler(
     args = parts[1] if len(parts) > 1 else ""
     window_id = thread_router.resolve_window_for_thread(user.id, thread_id, chat.id)
     if not window_id:
-        await safe_reply(update.message, "❌ No session bound to this topic.")
+        await safe_reply(update.message, "No session bound to this topic.")
         return
 
     w = await tmux_manager.find_window_by_id(window_id)
     if not w:
         display = thread_router.get_display_name(window_id)
-        await safe_reply(update.message, f"❌ Window '{display}' no longer exists.")
+        await safe_reply(update.message, f"Window '{display}' no longer exists.")
         return
 
     display = thread_router.get_display_name(window_id)
@@ -309,12 +309,12 @@ async def forward_command_handler(
         user.id, window_id, thread_id, cc_slash, update.message.chat.id
     )
     if not success:
-        await safe_reply(update.message, f"❌ {error_msg}")
+        await safe_reply(update.message, f"{error_msg}")
         return
 
     if thread_id is not None:
         record_command(user.id, thread_id, cc_slash)
-    confirmation = f"⚡ [{display}] Sent: {cc_slash}"
+    confirmation = f"[{display}] Sent: {cc_slash}"
     # Picker hint only fires when no args were forwarded: picker commands that
     # accept a direct value (e.g. /model gpt-5) apply it without opening the
     # modal, so the "type /toolbar" guidance would mislead.

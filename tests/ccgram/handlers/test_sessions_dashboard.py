@@ -105,7 +105,7 @@ class TestBuildDashboard:
             deps, state=WindowState(cwd="/home/user/myproject")
         )
 
-        assert "\U0001f7e2 myproject" in text
+        assert "myproject — running" in text
         assert "/home/user/myproject" in text
 
     async def test_session_without_cwd_shows_no_path_line(
@@ -122,7 +122,7 @@ class TestBuildDashboard:
 
         text, _kb = await _build_dashboard(100)
 
-        assert "⚫ oldproject" in text
+        assert "oldproject — stopped" in text
 
     async def test_alive_and_dead_sessions_listed_together(
         self, deps: SimpleNamespace
@@ -135,8 +135,8 @@ class TestBuildDashboard:
 
         text, _kb = await _build_dashboard(100)
 
-        assert "\U0001f7e2 alive" in text
-        assert "⚫ dead" in text
+        assert "alive — running" in text
+        assert "dead — stopped" in text
 
     async def test_liveness_comes_from_the_complete_listing(
         self, deps: SimpleNamespace
@@ -149,8 +149,8 @@ class TestBuildDashboard:
 
         text, _kb = await _build_dashboard(100)
 
-        assert "\U0001f7e2 out-of-scope" in text
-        assert "⚫" not in text
+        assert "out-of-scope — running" in text
+        assert "stopped" not in text
 
     async def test_unreachable_multiplexer_is_not_reported_as_stopped(
         self, deps: SimpleNamespace
@@ -160,9 +160,9 @@ class TestBuildDashboard:
 
         text, _kb = await _build_dashboard(100)
 
-        assert "⚪ proj" in text
-        assert "⚫" not in text
-        assert "\U0001f7e2" not in text
+        assert "proj — unknown" in text
+        assert "stopped" not in text
+        assert "running" not in text
 
     @pytest.mark.parametrize(
         ("state", "expected_tag", "present"),
@@ -347,5 +347,5 @@ class TestDashboardIdentityFoldsCase:
 
         text, _kb = await _build_dashboard(100)
 
-        assert "\U0001f7e2 proj" in text
-        assert "⚫" not in text
+        assert "proj — running" in text
+        assert "stopped" not in text

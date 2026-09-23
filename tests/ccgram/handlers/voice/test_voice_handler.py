@@ -145,7 +145,7 @@ class TestHandleVoiceMessage:
             await voice_handler.handle_voice_message(update, context)
 
         voice_env.reply.assert_awaited_once_with(
-            update.message, f"🎤 Transcribed:\n\n{_TRANSCRIPT}"
+            update.message, f"Transcribed:\n\n{_TRANSCRIPT}"
         )
         mock_send.assert_awaited_once_with(
             _USER_ID, _THREAD_ID, "@0", _TRANSCRIPT, update.message
@@ -251,7 +251,7 @@ class TestHandleVoiceMessage:
             _make_update(), MagicMock(user_data={})
         )
 
-        assert "❌" in voice_env.reply.call_args.args[1]
+        assert "Transcription failed" in voice_env.reply.call_args.args[1]
 
     async def test_failed_download_stops_processing(
         self, voice_env: SimpleNamespace
@@ -395,7 +395,7 @@ class TestHandleVoiceCallback:
         await voice_callbacks.handle_voice_callback(update, context)
 
         update.callback_query.answer.assert_called_once_with(
-            "⚠️ No session bound.", show_alert=True
+            "No session bound.", show_alert=True
         )
         assert (_CHAT_ID, _THREAD_ID) in context.user_data[VOICE_PENDING]
 
@@ -416,7 +416,7 @@ class TestHandleVoiceCallback:
         await voice_callbacks.handle_voice_callback(update, context)
 
         update.callback_query.answer.assert_called_once_with(
-            f"❌ {error_msg}", show_alert=True
+            f"{error_msg}", show_alert=True
         )
         assert (_CHAT_ID, _THREAD_ID) in context.user_data[VOICE_PENDING]
 
@@ -484,6 +484,6 @@ class TestHandleVoiceCallback:
 
         assert context.user_data[VOICE_PENDING][(_CHAT_ID, _THREAD_ID)] == "list files"
         update.callback_query.answer.assert_called_once_with(
-            "❌ Failed to send", show_alert=True
+            "Failed to send", show_alert=True
         )
         callback_env.send_to_window.assert_not_called()

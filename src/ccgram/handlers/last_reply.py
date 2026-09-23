@@ -200,17 +200,17 @@ async def last_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
                 update.get_bot(), update.message, update.effective_chat.id
             )
         else:
-            await safe_reply(update.message, "❌ Use this command inside a topic.")
+            await safe_reply(update.message, "Use this command inside a topic.")
         return
 
     window_id = thread_router.get_window_for_thread(user.id, thread_id)
     if not window_id:
-        await safe_reply(update.message, "❌ This topic is not bound to any session.")
+        await safe_reply(update.message, "This topic is not bound to any session.")
         return
 
     w = await tmux_manager.find_window_by_id(window_id)
     if not w:
-        await safe_reply(update.message, "❌ Window no longer exists.")
+        await safe_reply(update.message, "Window no longer exists.")
         return
 
     chat_id = thread_router.resolve_chat_id(user.id, thread_id)

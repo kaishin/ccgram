@@ -536,7 +536,7 @@ class TestHandleTaskCompleted:
             )
             await dispatch_hook_event(event, bot)
             text = mock_enqueue.call_args[0][3]
-            assert "\u2705 Task completed: write tests" in text
+            assert "✓ Task completed: write tests" in text
             assert "(by 'coder')" in text
 
     async def test_no_teammate_name(self, bindings) -> None:
@@ -548,7 +548,7 @@ class TestHandleTaskCompleted:
             )
             await dispatch_hook_event(event, bot)
             text = mock_enqueue.call_args[0][3]
-            assert "\u2705 Task completed: deploy" in text
+            assert "✓ Task completed: deploy" in text
             assert "(by " not in text
 
     async def test_tracked_task_refreshes_task_status(self, bindings) -> None:

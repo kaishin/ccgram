@@ -23,7 +23,7 @@ def build_status_line(status: StatusUpdate | None) -> str | None:
         return None
     normalized = status.raw_text.strip().casefold()
     if normalized == "working":
-        return "💬 Working..."
+        return "Working..."
     if normalized in {"waiting", "waiting for input"}:
         return "⏳ Waiting for input..."
     return status.raw_text

@@ -68,5 +68,5 @@ async def unsupported_content_handler(
     )
     await safe_reply(
         update.message,
-        f"⚠ {media_list}, and similar media are not supported. Use text, photos, or documents.",
+        f"{media_list}, and similar media are not supported. Use text, photos, or documents.",
     )

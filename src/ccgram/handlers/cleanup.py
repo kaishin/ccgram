@@ -136,7 +136,7 @@ async def unbind_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 update.get_bot(), update.message, update.effective_chat.id
             )
         else:
-            await safe_reply(update.message, "❌ Use this command inside a topic.")
+            await safe_reply(update.message, "Use this command inside a topic.")
         return
 
     chat_id = update.effective_chat.id if update.effective_chat else None
@@ -146,7 +146,7 @@ async def unbind_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         else thread_router.get_window_for_thread(user.id, thread_id)
     )
     if not window_id:
-        await safe_reply(update.message, "❌ This topic is not bound to any session.")
+        await safe_reply(update.message, "This topic is not bound to any session.")
         return
 
     display = thread_router.get_display_name(window_id)
@@ -167,14 +167,14 @@ async def unbind_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if is_legacy_herdr:
         await safe_reply(
             update.message,
-            f"📦 Archived legacy Herdr binding `{display}` without closing its session.\n"
+            f"Archived legacy Herdr binding `{display}` without closing its session.\n"
             "It remains blocked if restored; use /rollback in this topic to restore "
             "this exact binding, or send a message to explicitly bind a listed session target.",
         )
         return
     await safe_reply(
         update.message,
-        f"✂ Unbound from window `{display}`. The session is still running.\n"
+        f"Unbound from window `{display}`. The session is still running.\n"
         "Send a message in this topic to rebind or create a new session.",
     )
 
@@ -190,7 +190,7 @@ async def rollback_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) 
     thread_id = get_thread_id(update)
     if thread_id is None:
         await safe_reply(
-            update.message, "❌ Use this command inside the archived topic."
+            update.message, "Use this command inside the archived topic."
         )
         return
     if (
@@ -201,14 +201,14 @@ async def rollback_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) 
         )
         is not None
     ):
-        await safe_reply(update.message, "❌ This topic is already bound to a session.")
+        await safe_reply(update.message, "This topic is already bound to a session.")
         return
 
     window_id = legacy_state.get_archived_legacy_herdr_binding(user.id, thread_id)
     if window_id is None:
         await safe_reply(
             update.message,
-            "❌ No archived legacy Herdr binding belongs to this topic.",
+            "No archived legacy Herdr binding belongs to this topic.",
         )
         return
 
@@ -217,11 +217,11 @@ async def rollback_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) 
 
     if not rollback_legacy_herdr_binding(user.id, thread_id, window_id):
         await safe_reply(
-            update.message, "❌ The archived binding is no longer available."
+            update.message, "The archived binding is no longer available."
         )
         return
     await safe_reply(
         update.message,
-        "📦 Restored this legacy Herdr binding. It remains blocked; send a message "
+        "Restored this legacy Herdr binding. It remains blocked; send a message "
         "to explicitly bind a listed session target before taking actions.",
     )

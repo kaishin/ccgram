@@ -108,14 +108,14 @@ async def _handle_send(
     )
     pending_text = pending_store.pop((msg.chat.id, message_id), None)
     if pending_text is None:
-        await query.answer("⚠️ Session expired, resend voice message", show_alert=True)
+        await query.answer("Session expired, resend voice message", show_alert=True)
         return
 
     thread_id = get_thread_id(update)
     window_id = thread_router.resolve_window_for_thread(user_id, thread_id, msg.chat.id)
     if not window_id:
         pending_store[(msg.chat.id, message_id)] = pending_text
-        await query.answer("⚠️ No session bound.", show_alert=True)
+        await query.answer("No session bound.", show_alert=True)
         return
 
     client = PTBTelegramClient(msg.get_bot())
@@ -131,7 +131,7 @@ async def _handle_send(
         await _ack_delivered(client, msg, query, message_id)
     else:
         pending_store[(msg.chat.id, message_id)] = pending_text
-        await query.answer(f"❌ {err}", show_alert=True)
+        await query.answer(f"{err}", show_alert=True)
 
 
 async def _ack_delivered(

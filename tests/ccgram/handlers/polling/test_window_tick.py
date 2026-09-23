@@ -844,8 +844,8 @@ class TestPaneLifecycleNotify:
             await window_tick._notify_pane_lifecycle(bot, 1, "@0", 100, transitions)
 
         texts = [call.args[2] for call in mock_send.call_args_list]
-        assert any("➕" in t and "%5" in t and "created" in t for t in texts)
-        assert any("➖" in t and "%6" in t and "closed" in t for t in texts)
+        assert any("%5" in t and "created" in t for t in texts)
+        assert any("%6" in t and "closed" in t for t in texts)
 
     async def test_named_pane_used_in_label(self):
         window_store.set_pane_lifecycle_notify("@0", True)

@@ -200,10 +200,10 @@ def _make_item_button(item: Path, idx: int, cwd: Path) -> InlineKeyboardButton:
     """Return a single InlineKeyboardButton for *item* at position *idx*."""
     if item.is_dir():
         return InlineKeyboardButton(
-            f"📁 {item.name}", callback_data=f"{CB_SEND_DIR}{idx}"
+            f"{item.name}", callback_data=f"{CB_SEND_DIR}{idx}"
         )
     label = _format_file_label(item, cwd)
-    icon = "🖼️" if _is_image(item) else "📄"
+    icon = ""
     return InlineKeyboardButton(f"{icon} {label}", callback_data=f"{CB_SEND_FILE}{idx}")
 
 
@@ -250,21 +250,21 @@ def build_file_browser(
         nav: list[InlineKeyboardButton] = []
         if page > 0:
             nav.append(
-                InlineKeyboardButton("◀", callback_data=f"{CB_SEND_PAGE}{page - 1}")
+                InlineKeyboardButton("Prev", callback_data=f"{CB_SEND_PAGE}{page - 1}")
             )
         nav.append(
             InlineKeyboardButton(f"{page + 1}/{total_pages}", callback_data="noop")
         )
         if page < total_pages - 1:
             nav.append(
-                InlineKeyboardButton("▶", callback_data=f"{CB_SEND_PAGE}{page + 1}")
+                InlineKeyboardButton("Next", callback_data=f"{CB_SEND_PAGE}{page + 1}")
             )
         buttons.append(nav)
 
     parent_row: list[InlineKeyboardButton] = []
     if current_path != cwd:
-        parent_row.append(InlineKeyboardButton("📁 ..", callback_data=CB_SEND_UP))
-    parent_row.append(InlineKeyboardButton("✖ Cancel", callback_data=CB_SEND_CANCEL))
+        parent_row.append(InlineKeyboardButton("..", callback_data=CB_SEND_UP))
+    parent_row.append(InlineKeyboardButton("Cancel", callback_data=CB_SEND_CANCEL))
     buttons.append(parent_row)
 
     try:
@@ -274,7 +274,7 @@ def build_file_browser(
     except ValueError:
         display_path = current_path.name
 
-    return f"📂 {display_path}", InlineKeyboardMarkup(buttons), items
+    return f"{display_path}", InlineKeyboardMarkup(buttons), items
 
 
 def build_search_results(
@@ -291,11 +291,11 @@ def build_search_results(
 
     flat = [_make_item_button(path, idx, cwd) for idx, path in enumerate(shown)]
     buttons = _pack_into_rows(flat)
-    buttons.append([InlineKeyboardButton("✖ Cancel", callback_data=CB_SEND_CANCEL)])
+    buttons.append([InlineKeyboardButton("Cancel", callback_data=CB_SEND_CANCEL)])
 
     count = len(matches)
     cap = _ITEMS_PER_PAGE * 3
-    header = f"🔍 {cap}+ results" if count > cap else f"🔍 {count} result(s)"
+    header = f"{cap}+ results" if count > cap else f"{count} result(s)"
     if query:
         header += f" for '{query}'"
     return header, InlineKeyboardMarkup(buttons), shown

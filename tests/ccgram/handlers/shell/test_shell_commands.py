@@ -678,7 +678,7 @@ class TestDangerousCommandPrefix:
             await show_command_approval(bot, -100, 42, "@0", result, user_id=1)
 
         sent_text = mock_send.call_args[0][2]
-        assert ("⚠️ *Potentially dangerous*" in sent_text) is warned
+        assert ("*Potentially dangerous*" in sent_text) is warned
         assert command in sent_text
 
 

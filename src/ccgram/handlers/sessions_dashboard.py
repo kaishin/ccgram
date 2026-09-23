@@ -54,13 +54,12 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger()
 
-_REFRESH_BTN = InlineKeyboardButton(
-    "\U0001f504 Refresh", callback_data=CB_SESSIONS_REFRESH
-)
-_NEW_BTN = InlineKeyboardButton("\u2795 New Session", callback_data=CB_SESSIONS_NEW)
+_REFRESH_BTN = InlineKeyboardButton("Refresh", callback_data=CB_SESSIONS_REFRESH)
+_NEW_BTN = InlineKeyboardButton("New Session", callback_data=CB_SESSIONS_NEW)
 
-# Green running, black stopped, white when the multiplexer could not be asked.
-_LIVENESS_MARKER = {True: "\U0001f7e2", False: "\u26ab", None: "\u26aa"}
+# Liveness as plain words: running, stopped, or unknown when the multiplexer
+# could not be asked.
+_LIVENESS_MARKER = {True: "running", False: "stopped", None: "unknown"}
 
 
 async def _build_dashboard(user_id: int) -> tuple[str, InlineKeyboardMarkup]:
@@ -99,7 +98,7 @@ async def _build_dashboard(user_id: int) -> tuple[str, InlineKeyboardMarkup]:
         # Session line with provider + mode tags and cwd detail
         provider_tag = f" [{view.provider_name}]" if view and view.provider_name else ""
         mode_tag = " [YOLO]" if view and view.approval_mode == "yolo" else ""
-        line = f"{status} {display_name}{provider_tag}{mode_tag}"
+        line = f"{display_name}{provider_tag}{mode_tag} — {status}"
         if view and view.cwd:
             line += f"\n    {view.cwd}"
         lines.append(line)
@@ -107,13 +106,13 @@ async def _build_dashboard(user_id: int) -> tuple[str, InlineKeyboardMarkup]:
         if alive:
             row: list[InlineKeyboardButton] = [
                 InlineKeyboardButton(
-                    "\u238b Esc",
+                    "Esc",
                     callback_data=compact_callback_data(
                         CB_STATUS_ESC, f"{CB_STATUS_ESC}{window_id}", window_id
                     ),
                 ),
                 InlineKeyboardButton(
-                    "\U0001f4f8",
+                    "Screenshot",
                     callback_data=compact_callback_data(
                         CB_STATUS_SCREENSHOT,
                         f"{CB_STATUS_SCREENSHOT}{window_id}",
@@ -121,7 +120,7 @@ async def _build_dashboard(user_id: int) -> tuple[str, InlineKeyboardMarkup]:
                     ),
                 ),
                 InlineKeyboardButton(
-                    f"\U0001f5d1 Kill {display_name}",
+                    f"Kill {display_name}",
                     callback_data=compact_callback_data(
                         CB_SESSIONS_KILL, f"{CB_SESSIONS_KILL}{window_id}", window_id
                     ),
@@ -163,7 +162,7 @@ async def handle_sessions_kill(
         [
             [
                 InlineKeyboardButton(
-                    f"\u26a0 Confirm kill {display}",
+                    f"Confirm kill {display}",
                     callback_data=compact_callback_data(
                         CB_SESSIONS_KILL_CONFIRM,
                         f"{CB_SESSIONS_KILL_CONFIRM}{window_id}",
@@ -176,7 +175,7 @@ async def handle_sessions_kill(
     )
     await safe_edit(
         query,
-        f"Kill session '{display}'?\n\nThis will terminate the Claude Code process.",
+        f"Kill session '{display}'?\n\nThis will terminate the session.",
         reply_markup=keyboard,
     )
 
@@ -195,7 +194,7 @@ async def handle_sessions_kill_confirm(
     if presence is None:
         await safe_edit(
             query,
-            f"\u26a0 Could not reach the multiplexer, so '{display}' was left "
+            f"Could not reach the multiplexer, so '{display}' was left "
             "alone. Nothing was killed or unbound.",
             reply_markup=None,
         )
@@ -206,7 +205,7 @@ async def handle_sessions_kill_confirm(
         # it may still be running. Clearing the bindings now would strand it.
         await safe_edit(
             query,
-            f"\u26a0 Could not kill '{display}'. Nothing was unbound.",
+            f"Could not kill '{display}'. Nothing was unbound.",
             reply_markup=None,
         )
         return
@@ -247,7 +246,7 @@ async def handle_sessions_kill_confirm(
 
     # Re-render dashboard
     text, keyboard = await _build_dashboard(user_id)
-    headline = "\U0001f5d1 Killed" if presence else "\U0001f5d1 Was already gone:"
+    headline = "Killed" if presence else "Was already gone:"
     await safe_edit(query, f"{headline} '{display}'\n\n{text}", reply_markup=keyboard)
 
 

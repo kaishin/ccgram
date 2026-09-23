@@ -238,14 +238,14 @@ async def _handle_worktree_name_reply(
     if not repo:
         user_data.pop(AWAITING_WORKTREE_BRANCH_NAME, None)
         await safe_reply(
-            message, "❌ Worktree state lost. Start over with a new message."
+            message, "Worktree state lost. Start over with a new message."
         )
         return True
 
     name = text.strip()
     # Offloaded: validate_branch_name shells out to `git check-ref-format`.
     if not await asyncio.to_thread(validate_branch_name, name):
-        await safe_reply(message, "❌ Invalid branch name; try again or tap Cancel.")
+        await safe_reply(message, "Invalid branch name; try again or tap Cancel.")
         return True
 
     worktree_path = worktree_path_for(Path(repo), slug_for_path(name))
@@ -342,7 +342,7 @@ async def _handle_dead_window(
     if window_query.is_legacy_herdr(window_id) is True:
         await safe_reply(
             message,
-            "⚠ This topic uses a legacy Herdr tab or pane binding and is blocked. "
+            "This topic uses a legacy Herdr tab or pane binding and is blocked. "
             "Archive it with /unbind, then explicitly bind a listed session target.",
         )
         return True

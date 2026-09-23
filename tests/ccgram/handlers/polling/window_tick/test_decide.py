@@ -209,7 +209,7 @@ class TestBuildStatusLine:
 
     def test_working_is_formatted_for_display(self):
         result = build_status_line(StatusUpdate(raw_text="working", display_label=""))
-        assert result == "💬 Working..."
+        assert result == "Working..."
 
     @pytest.mark.parametrize("raw_text", ["waiting", "waiting for input"])
     def test_waiting_is_formatted_for_display(self, raw_text):

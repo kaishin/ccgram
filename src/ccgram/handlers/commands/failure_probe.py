@@ -175,7 +175,7 @@ async def _maybe_send_command_failure_message(
     if error_line:
         await safe_reply(
             message,
-            f"❌ [{display}] `{cc_slash}` failed\n> {error_line}",
+            f"[{display}] `{cc_slash}` failed\n> {error_line}",
         )
 
 

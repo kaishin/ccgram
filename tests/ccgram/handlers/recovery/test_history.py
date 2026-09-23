@@ -64,9 +64,9 @@ class TestBuildHistoryKeyboard:
     @pytest.mark.parametrize(
         ("page_index", "total_pages", "expected_labels"),
         [
-            (0, 3, ["1/3", "Newer ▶"]),
-            (1, 3, ["◀ Older", "2/3", "Newer ▶"]),
-            (2, 3, ["◀ Older", "3/3"]),
+            (0, 3, ["1/3", "Newer"]),
+            (1, 3, ["Older", "2/3", "Newer"]),
+            (2, 3, ["Older", "3/3"]),
         ],
         ids=["first-page", "middle-page", "last-page"],
     )
@@ -112,8 +112,8 @@ class TestSendHistoryContent:
     @pytest.mark.parametrize(
         ("kwargs", "expected"),
         [
-            ({}, "📋 [win-name] No messages yet."),
-            ({"start_byte": 100}, "📬 [win-name] No unread messages."),
+            ({}, "[win-name] No messages yet."),
+            ({"start_byte": 100}, "[win-name] No unread messages."),
         ],
         ids=["full-history", "unread-range"],
     )
@@ -123,21 +123,21 @@ class TestSendHistoryContent:
     async def test_header_counts_messages(self) -> None:
         text = await self._render([_message("hi")])
 
-        assert text.startswith("📋 [win-name] Messages (1 total)")
+        assert text.startswith("[win-name] Messages (1 total)")
 
     async def test_unread_header(self) -> None:
         text = await self._render([_message("hi")], start_byte=10, end_byte=20)
 
-        assert text.startswith("📬 [win-name] 1 unread messages")
+        assert text.startswith("[win-name] 1 unread messages")
 
     @pytest.mark.parametrize(
         ("message", "expected_line"),
         [
-            (_message("hello", role="user"), "👤 hello"),
+            (_message("hello", role="user"), "hello"),
             (_message("assistant reply"), "assistant reply"),
             (
                 _message("pondering", content_type="thinking"),
-                "\U0001f9e0 Thinking…\npondering",
+                "Thinking…\npondering",
             ),
         ],
         ids=["user", "assistant", "thinking"],
@@ -192,16 +192,16 @@ class TestSendHistoryPagination:
 
         keyboard = call.kwargs["reply_markup"]
         labels = [b.text for b in keyboard.inline_keyboard[0]]
-        assert "◀ Older" in labels
-        assert "Newer ▶" not in labels
+        assert "Older" in labels
+        assert "Newer" not in labels
 
     async def test_offset_zero_serves_the_oldest_page(self) -> None:
         call = await self._render(offset=0)
 
         keyboard = call.kwargs["reply_markup"]
         labels = [b.text for b in keyboard.inline_keyboard[0]]
-        assert "◀ Older" not in labels
-        assert "Newer ▶" in labels
+        assert "Older" not in labels
+        assert "Newer" in labels
 
     async def test_offset_past_the_end_clamps_to_the_last_page(self) -> None:
         last = await self._render(offset=-1)

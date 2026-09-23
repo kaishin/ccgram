@@ -243,11 +243,11 @@ async def _notify_pane_lifecycle(
             continue
         if t.new_state == "dead":
             label = f"{t.name} ({t.pane_id})" if t.name else t.pane_id
-            text = f"➖ pane {label} closed"
+            text = f"pane {label} closed"
         else:
             pane = get_pane_projection(window_id, t.pane_id)
             label = f"{pane.name} ({t.pane_id})" if pane and pane.name else t.pane_id
-            text = f"➕ pane {label} created"
+            text = f"pane {label} created"
         try:
             await safe_send(
                 PTBTelegramClient(bot), chat_id, text, message_thread_id=thread_id

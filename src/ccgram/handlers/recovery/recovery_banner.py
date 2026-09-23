@@ -153,13 +153,13 @@ def render_banner(banner: RecoveryBanner) -> tuple[str, InlineKeyboardMarkup]:
     label = banner.display or banner.window_id
 
     if banner.mode == "restore":
-        title = f"\U0001f504 Restore `{label}`."
+        title = f"Restore `{label}`."
         prompt = f"Choose how to continue.\n{help_text}"
     elif banner.mode == "resume":
-        title = f"⏪ Resume `{label}`."
+        title = f"Resume `{label}`."
         prompt = f"Pick a session below or use the menu.\n{help_text}"
     else:
-        title = f"⚠ Session `{label}` ended."
+        title = f"Session `{label}` ended."
         prompt = f"Tap a button or send a message to recover.\n{help_text}"
 
     text = f"{title}{cwd_line}\n\n{prompt}"
@@ -206,7 +206,7 @@ def build_recovery_keyboard(window_id: str) -> InlineKeyboardMarkup:
     if caps.supports_continue:
         options.append(
             InlineKeyboardButton(
-                "▶ Continue",
+                "Continue",
                 callback_data=compact_callback_data(
                     CB_RECOVERY_CONTINUE,
                     f"{CB_RECOVERY_CONTINUE}{window_id}",
@@ -217,7 +217,7 @@ def build_recovery_keyboard(window_id: str) -> InlineKeyboardMarkup:
     if caps.supports_resume and caps.supports_resume_picker:
         options.append(
             InlineKeyboardButton(
-                "⏪ Resume",
+                "Resume",
                 callback_data=compact_callback_data(
                     CB_RECOVERY_RESUME, f"{CB_RECOVERY_RESUME}{window_id}", window_id
                 ),
@@ -226,7 +226,7 @@ def build_recovery_keyboard(window_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             options,
-            [InlineKeyboardButton("✖ Cancel", callback_data=CB_RECOVERY_CANCEL)],
+            [InlineKeyboardButton("Cancel", callback_data=CB_RECOVERY_CANCEL)],
         ]
     )
 
@@ -514,7 +514,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
             **provisioning_kwargs,
         )
     except (TypeError, ValueError) as exc:
-        await safe_edit(query, f"❌ {exc}", reply_markup=None)
+        await safe_edit(query, f"{exc}", reply_markup=None)
         await query.answer("Failed")
         return False
     claim_id = claim.claim_id
@@ -617,7 +617,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
             )
         else:
             _mark_provisioning_uncertain(claim_id)
-        await safe_edit(query, f"❌ {message}")
+        await safe_edit(query, f"{message}")
         _clear_recovery_state(context.user_data)
         await query.answer("Failed")
         if creation_was_cancelled:
@@ -688,7 +688,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
                 "Could not verify the new session; ccgram kept it quarantined "
                 "for recovery."
             )
-            await safe_edit(query, f"⚠ {message}")
+            await safe_edit(query, f"{message}")
             await query.answer("Still starting")
             return False
         if presence is False:
@@ -704,7 +704,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
                 target_confirmed_absent=True,
             )
             message = "Session did not register with ccgram and is gone"
-            await safe_edit(query, f"❌ {message}")
+            await safe_edit(query, f"{message}")
             _clear_recovery_state(context.user_data)
             await query.answer("Failed")
             return False
@@ -715,7 +715,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
             "Session is still starting; ccgram kept it quarantined for recovery. "
             "Try again after it finishes registering."
         )
-        await safe_edit(query, f"⚠ {message}")
+        await safe_edit(query, f"{message}")
         await query.answer("Still starting")
         return False
 
@@ -737,7 +737,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
         _mark_provisioning_uncertain(claim_id)
         topic_orchestration.clear_pending_creation(created_wid)
         message = "Session could not be bound to this topic"
-        await safe_edit(query, f"❌ {message}")
+        await safe_edit(query, f"{message}")
         _clear_recovery_state(context.user_data)
         await query.answer("Failed")
         return False
@@ -760,7 +760,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
     except TelegramError as e:
         logger.debug("Failed to rename topic: %s", e)
 
-    await safe_edit(query, f"✅ {message}\n\n{success_label}")
+    await safe_edit(query, f"{message}\n\n{success_label}")
 
     pending_text = (
         context.user_data.get(PENDING_THREAD_TEXT) if context.user_data else None
@@ -780,7 +780,7 @@ async def _create_and_bind_window(  # noqa: C901, PLR0912, PLR0915
             await safe_send(
                 client,
                 thread_router.resolve_chat_id(user_id, thread_id),
-                f"❌ Failed to send pending message: {send_msg}",
+                f"Failed to send pending message: {send_msg}",
                 message_thread_id=thread_id,
             )
     await query.answer("Created")
@@ -811,7 +811,7 @@ async def _recovery_cwd_or_report(
     if not cwd:
         await safe_edit(
             query,
-            "⚠ This topic's session state is gone, so its folder is unknown.",
+            "This topic's session state is gone, so its folder is unknown.",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -996,7 +996,7 @@ async def _handle_resume(
     keyboard = _build_resume_picker_keyboard(sessions, old_wid)
     await safe_edit(
         query,
-        f"⏪ Select a session to resume:\n(`{cwd}`)",
+        f"Select a session to resume:\n(`{cwd}`)",
         reply_markup=keyboard,
     )
     await query.answer()
@@ -1017,7 +1017,7 @@ async def _send_empty_state(
     keyboard = _build_empty_resume_keyboard(window_id)
     await safe_edit(
         query,
-        f"⚠ No sessions in this folder yet.\n(`{cwd}`)",
+        f"No sessions in this folder yet.\n(`{cwd}`)",
         reply_markup=keyboard,
     )
     await query.answer()
@@ -1052,7 +1052,7 @@ async def _handle_browse(
     provider_name = window_query.get_window_provider(old_wid)
     sessions = await asyncio.to_thread(scan_all_sessions, provider_name)
     if not sessions:
-        await safe_edit(query, "⚠ No past sessions found in any project.")
+        await safe_edit(query, "No past sessions found in any project.")
         _clear_recovery_state(context.user_data)
         await query.answer("Nothing to resume")
         return
@@ -1075,7 +1075,7 @@ async def _handle_browse(
     keyboard = _build_resume_keyboard(
         context.user_data[RESUME_SESSIONS] if context.user_data else [], page=0
     )
-    await safe_edit(query, "⏪ Select a session to resume:", reply_markup=keyboard)
+    await safe_edit(query, "Select a session to resume:", reply_markup=keyboard)
     await query.answer()
 
 

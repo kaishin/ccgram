@@ -501,11 +501,11 @@ class TranscriptParser:
                 error_summary = result_text.split("\n")[0]
                 if len(error_summary) > cls._ERROR_SUMMARY_LIMIT:
                     error_summary = error_summary[: cls._ERROR_SUMMARY_LIMIT] + "…"
-                entry_text += f"\n  ⎿  ⚠️ {error_summary}"
+                entry_text += f"\n  ⎿  {error_summary}"
                 if "\n" in result_text:
                     entry_text += "\n" + format_expandable_quote(result_text)
             else:
-                entry_text += "\n  ⎿  ⚠️ Error"
+                entry_text += "\n  ⎿  Error"
             return ParsedEntry(
                 role="assistant",
                 text=entry_text,

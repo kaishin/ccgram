@@ -234,7 +234,7 @@ class TestFormatReport:
     @pytest.mark.parametrize(
         ("kwargs", "expected_text"),
         [
-            pytest.param({"fixed_count": 2}, "✅ Fixed 2 issues", id="fixed-header"),
+            pytest.param({"fixed_count": 2}, "Fixed 2 issues", id="fixed-header"),
             pytest.param(
                 {"fixed_count": 1, "closed_topic_count": 1},
                 "Removed 1 stale topic",
@@ -629,7 +629,7 @@ class TestSyncCommand:
             patch("ccgram.handlers.sync_command.logger") as mock_logger,
         ):
             await sync_command(update, MagicMock())
-            mock_reply.assert_awaited_once_with(update.message, "🔍 State audit…")
+            mock_reply.assert_awaited_once_with(update.message, "State audit…")
             assert mock_sm.audit_state.call_count == 2
             assert mock_edit.await_count == 2
             assert "2 topics bound" in mock_edit.call_args_list[-1].args[1]
@@ -794,7 +794,7 @@ class TestSyncAutomaticCleanup:
         assert client.call_count("delete_forum_topic") == 1
         assert router.get_window_for_chat_thread(-999, 42) is None
         assert list(router.iter_retired_topics()) == []
-        assert edit.call_args_list[0].args[1] == "🧹 Cleaning up stale topics…"
+        assert edit.call_args_list[0].args[1] == "Cleaning up stale topics…"
         assert "Removed 1 stale topic" in edit.call_args_list[-1].args[1]
         assert "Fixed 1 issue" in edit.call_args_list[-1].args[1]
 
@@ -1032,8 +1032,8 @@ class TestSyncFix:
             assert mock_sync_topic_icons.call_args.args[1] == set()
             assert mock_sm.audit_state.call_count == 2
             assert mock_edit.call_count == 2
-            assert "🔧 Fixing…" in mock_edit.call_args_list[0].args[1]
-            assert "\u2705 Fixed 1 issue" in mock_edit.call_args_list[1].args[1]
+            assert "Fixing…" in mock_edit.call_args_list[0].args[1]
+            assert "Fixed 1 issue" in mock_edit.call_args_list[1].args[1]
 
     async def test_fix_computes_actual_fixed_count(self, _patch_deps) -> None:
         mock_sm, _, _, _, _, _ = _patch_deps
@@ -1059,7 +1059,7 @@ class TestSyncFix:
 
         with patch("ccgram.handlers.sync_command.safe_edit") as mock_edit:
             await handle_sync_fix(query)
-            assert "\u2705 Fixed 1 issue" in mock_edit.call_args[0][1]
+            assert "Fixed 1 issue" in mock_edit.call_args[0][1]
 
     async def test_fix_closes_ghost_topics(self, _patch_deps) -> None:
         mock_sm, _, _, mock_tr, _, _ = _patch_deps

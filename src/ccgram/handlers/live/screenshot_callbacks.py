@@ -498,7 +498,7 @@ async def live_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
                 update.get_bot(), update.message, update.effective_chat.id
             )
         else:
-            await safe_reply(update.message, "❌ Use this command inside a topic.")
+            await safe_reply(update.message, "Use this command inside a topic.")
         return
 
     if is_live(user.id, thread_id):
@@ -507,17 +507,17 @@ async def live_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
 
     window_id = thread_router.get_window_for_thread(user.id, thread_id)
     if not window_id:
-        await safe_reply(update.message, "❌ This topic is not bound to any session.")
+        await safe_reply(update.message, "This topic is not bound to any session.")
         return
 
     w = await tmux_manager.find_window_by_id(window_id)
     if not w:
-        await safe_reply(update.message, "❌ Window no longer exists.")
+        await safe_reply(update.message, "Window no longer exists.")
         return
 
     text = await tmux_manager.capture_pane(w.window_id, with_ansi=True)
     if not text:
-        await safe_reply(update.message, "❌ Failed to capture terminal.")
+        await safe_reply(update.message, "Failed to capture terminal.")
         return
 
     chat_id = thread_router.resolve_chat_id(user.id, thread_id)
@@ -534,7 +534,7 @@ async def live_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
         )
     except TelegramError as e:
         logger.error("Failed to start live view: %s", e)
-        await safe_reply(update.message, "❌ Failed to start live view.")
+        await safe_reply(update.message, "Failed to start live view.")
         return
 
     start_live_view(

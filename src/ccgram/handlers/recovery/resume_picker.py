@@ -94,12 +94,12 @@ def _build_resume_picker_keyboard(
     rows.append(
         [
             InlineKeyboardButton(
-                "⬅ Back",
+                "Back",
                 callback_data=compact_callback_data(
                     CB_RECOVERY_BACK, f"{CB_RECOVERY_BACK}{window_id}", window_id
                 ),
             ),
-            InlineKeyboardButton("✖ Cancel", callback_data=CB_RECOVERY_CANCEL),
+            InlineKeyboardButton("Cancel", callback_data=CB_RECOVERY_CANCEL),
         ]
     )
     return InlineKeyboardMarkup(rows)
@@ -133,7 +133,7 @@ def _build_empty_resume_keyboard(window_id: str) -> InlineKeyboardMarkup:
                     ),
                 ),
             ],
-            [InlineKeyboardButton("✖ Cancel", callback_data=CB_RECOVERY_CANCEL)],
+            [InlineKeyboardButton("Cancel", callback_data=CB_RECOVERY_CANCEL)],
         ]
     )
 

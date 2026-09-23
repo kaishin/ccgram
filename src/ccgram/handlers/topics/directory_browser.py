@@ -258,14 +258,14 @@ def build_directory_browser(
         nav: list[InlineKeyboardButton] = []
         if page > 0:
             nav.append(
-                InlineKeyboardButton("◀", callback_data=f"{CB_DIR_PAGE}{page - 1}")
+                InlineKeyboardButton("Prev", callback_data=f"{CB_DIR_PAGE}{page - 1}")
             )
         nav.append(
             InlineKeyboardButton(f"{page + 1}/{total_pages}", callback_data="noop")
         )
         if page < total_pages - 1:
             nav.append(
-                InlineKeyboardButton("▶", callback_data=f"{CB_DIR_PAGE}{page + 1}")
+                InlineKeyboardButton("Next", callback_data=f"{CB_DIR_PAGE}{page + 1}")
             )
         buttons.append(nav)
 

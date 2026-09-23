@@ -111,7 +111,7 @@ async def _handle_notification(event: HookEvent, client: TelegramClient) -> None
         if provider_name != "claude":
             message = str(event.data.get("message", "") or "Agent notification")
             await enqueue_status_update(
-                client, user_id, window_id, f"⚠ {message}", thread_id=thread_id
+                client, user_id, window_id, f"{message}", thread_id=thread_id
             )
             continue
 
@@ -217,7 +217,7 @@ async def _handle_stop(event: HookEvent, client: TelegramClient) -> None:
             status_text = IDLE_STATUS_TEXT
         if summary and status_text:
             status_text = status_text.replace(
-                IDLE_STATUS_TEXT, f"✅ Done — {summary}", 1
+                IDLE_STATUS_TEXT, f"✓ Done — {summary}", 1
             )
         await enqueue_status_update(
             client, user_id, window_id, status_text, thread_id=thread_id
@@ -315,7 +315,7 @@ async def _handle_stop_failure(event: HookEvent, client: TelegramClient) -> None
     )
 
     detail = f": {error_details}" if error_details else ""
-    text = f"⚠ API error — {error}{detail}"
+    text = f"API error — {error}{detail}"
 
     for user_id, thread_id, _window_id in users:
         chat_id = thread_router.resolve_chat_id(user_id, thread_id)
@@ -384,7 +384,7 @@ async def _handle_task_completed(event: HookEvent, client: TelegramClient) -> No
             )
             continue
 
-        text = f"✅ Task completed: {task_subject}"
+        text = f"✓ Task completed: {task_subject}"
         if teammate_name:
             text += f" (by '{teammate_name}')"
         await enqueue_status_update(
