@@ -71,6 +71,7 @@ from .directory_browser import (
     BROWSE_PAGE_KEY,
     BROWSE_PATH_KEY,
     build_directory_browser,
+    default_browse_path,
     build_worktree_confirm,
     build_worktree_picker,
     clear_browse_state,
@@ -151,7 +152,7 @@ __all__ = [
 
 
 def _current_browse_path(context: ContextTypes.DEFAULT_TYPE) -> str:
-    default_path = str(Path.cwd())
+    default_path = default_browse_path()
     if context.user_data is None:
         return default_path
     return context.user_data.get(BROWSE_PATH_KEY, default_path)
@@ -171,11 +172,12 @@ async def _render_directory_browser(
     user_id: int,
     page: int = 0,
 ) -> None:
+    del user_id  # Kept for compatibility with the callback handlers.
     if context.user_data is not None:
         context.user_data[BROWSE_PATH_KEY] = path
         context.user_data[BROWSE_PAGE_KEY] = page
 
-    msg_text, keyboard, subdirs = build_directory_browser(path, page, user_id=user_id)
+    msg_text, keyboard, subdirs = build_directory_browser(path, page)
     if context.user_data is not None:
         context.user_data[BROWSE_DIRS_KEY] = subdirs
     await safe_edit(query, msg_text, reply_markup=keyboard)
@@ -288,7 +290,7 @@ async def _handle_star(
         user_id=user_id,
         page=current_page,
     )
-    await query.answer("⭐ Starred" if now_starred else "☆ Unstarred")
+    await query.answer("Pinned" if now_starred else "Unpinned")
 
 
 async def _handle_select(
@@ -455,7 +457,7 @@ async def _handle_confirm(
             clear_browse_state(context.user_data)
             await safe_edit(
                 query,
-                f"✅ Already bound to window {display}.",
+                f"Already bound to window {display}.",
             )
             return
 
@@ -528,7 +530,7 @@ async def _handle_wt_use_current(
     repo = context.user_data.get(PENDING_WORKTREE_REPO) if context.user_data else None
     selected_path = _required_selected_path(context)
     if not repo or not selected_path:
-        await safe_edit(query, "❌ Worktree state lost. Tap Cancel and retry.")
+        await safe_edit(query, "Worktree state lost. Tap Cancel and retry.")
         return
     clear_worktree_state(context.user_data)
     await _show_workspace_picker_or_provider(query, selected_path, context)
@@ -541,7 +543,7 @@ async def _handle_wt_new(
     await query.answer()
     repo = context.user_data.get(PENDING_WORKTREE_REPO) if context.user_data else None
     if not repo:
-        await safe_edit(query, "❌ Worktree state lost. Tap Cancel and retry.")
+        await safe_edit(query, "Worktree state lost. Tap Cancel and retry.")
         return
     repo_path = Path(repo)
     # Offloaded: suggest_branch_name runs blocking git branch/worktree list.
@@ -586,7 +588,7 @@ async def _handle_wt_confirm(
     if not (repo and branch and worktree_path):
         if user_data is not None:
             user_data.pop(PENDING_WORKTREE_CREATING, None)
-        await safe_edit(query, "❌ Worktree state lost. Tap Cancel and retry.")
+        await safe_edit(query, "Worktree state lost. Tap Cancel and retry.")
         return
     if delegate:
         # herdr makes the checkout + grouped workspace itself at creation time.
@@ -612,7 +614,7 @@ async def _handle_wt_confirm(
         logger.warning("Worktree creation failed: %s", exc)
         await safe_edit(
             query,
-            f"❌ Could not create worktree: {str(exc).splitlines()[0]}",
+            f"Could not create worktree: {str(exc).splitlines()[0]}",
             reply_markup=_cancel_only_keyboard(),
         )
         return
@@ -651,13 +653,13 @@ async def _handle_wt_edit_name(
     # next message in a fresh unbound-topic flow with "Worktree state lost".
     repo = context.user_data.get(PENDING_WORKTREE_REPO) if context.user_data else None
     if not repo:
-        await safe_edit(query, "❌ Worktree state lost. Tap Cancel and retry.")
+        await safe_edit(query, "Worktree state lost. Tap Cancel and retry.")
         return
     if context.user_data is not None:
         context.user_data[AWAITING_WORKTREE_BRANCH_NAME] = True
     await safe_edit(
         query,
-        "✏️ Send the branch name as a message, or tap Cancel.",
+        "Send the branch name as a message, or tap Cancel.",
         reply_markup=_cancel_only_keyboard(),
     )
 

@@ -29,6 +29,7 @@ from ..topics.directory_browser import (
     STATE_SELECTING_WINDOW,
     UNBOUND_WINDOWS_KEY,
     build_directory_browser,
+    default_browse_path,
     build_window_picker,
     build_worktree_confirm,
     clear_browse_state,
@@ -312,8 +313,8 @@ async def _handle_unbound_topic(
         user_id,
         thread_id,
     )
-    start_path = str(Path.cwd())
-    msg_text, keyboard, subdirs = build_directory_browser(start_path, user_id=user_id)
+    start_path = default_browse_path()
+    msg_text, keyboard, subdirs = build_directory_browser(start_path)
     if user_data is not None:
         user_data[STATE_KEY] = STATE_BROWSING_DIRECTORY
         user_data[BROWSE_PATH_KEY] = start_path
@@ -430,10 +431,8 @@ async def _handle_dead_window(
             cleanup_eligible=True,
         )
         lifecycle_strategy.clear_dead_notification(user_id, thread_id)
-        start_path = str(Path.cwd())
-        msg_text, keyboard, subdirs = build_directory_browser(
-            start_path, user_id=user_id
-        )
+        start_path = default_browse_path()
+        msg_text, keyboard, subdirs = build_directory_browser(start_path)
         if user_data is not None:
             user_data[STATE_KEY] = STATE_BROWSING_DIRECTORY
             user_data[BROWSE_PATH_KEY] = start_path

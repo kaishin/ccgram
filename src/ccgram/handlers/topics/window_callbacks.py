@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import structlog
-from pathlib import Path
-
 from telegram import CallbackQuery, Chat, Update
 from telegram.error import TelegramError
 from ...telegram_client import PTBTelegramClient, TelegramClient
@@ -31,6 +29,7 @@ from .directory_browser import (
     STATE_KEY,
     UNBOUND_WINDOWS_KEY,
     build_directory_browser,
+    default_browse_path,
     clear_window_picker_state,
 )
 from ..callback_registry import register
@@ -187,7 +186,7 @@ async def _forward_pending_text(
             await safe_send(
                 client,
                 thread_router.resolve_chat_id(user_id, thread_id),
-                f"❌ Failed to send pending message: {send_msg}",
+                f"Failed to send pending message: {send_msg}",
                 message_thread_id=thread_id,
             )
 
@@ -263,7 +262,7 @@ async def _handle_bind(
 
     await safe_edit(
         query,
-        f"✅ Bound to window `{display}`",
+        f"Bound to window `{display}`",
     )
 
     pending_text = (
@@ -297,6 +296,7 @@ async def _handle_new(
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     """Handle CB_WIN_NEW: transition from window picker to directory browser."""
+    del user_id  # Kept in the callback signature for dispatch compatibility.
     pending_tid = (
         context.user_data.get(PENDING_THREAD_ID) if context.user_data else None
     )
@@ -311,8 +311,8 @@ async def _handle_new(
         await query.answer("Stale picker (topic mismatch)", show_alert=True)
         return
     clear_window_picker_state(context.user_data)
-    start_path = str(Path.cwd())
-    msg_text, keyboard, subdirs = build_directory_browser(start_path, user_id=user_id)
+    start_path = default_browse_path()
+    msg_text, keyboard, subdirs = build_directory_browser(start_path)
     if context.user_data is not None:
         context.user_data[STATE_KEY] = STATE_BROWSING_DIRECTORY
         context.user_data[BROWSE_PATH_KEY] = start_path

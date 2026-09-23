@@ -66,6 +66,13 @@ DIRS_PER_PAGE = 6
 # Max characters to show in a button label before truncating with "…"
 _MAX_BUTTON_LABEL_LEN = 13
 
+
+def default_browse_path() -> str:
+    """Return the preferred starting directory for a new session."""
+    developer_dir = Path.home() / "Developer"
+    return str(developer_dir if developer_dir.is_dir() else Path.home())
+
+
 # User state keys
 STATE_KEY = "state"
 STATE_BROWSING_DIRECTORY = "browsing_directory"
@@ -74,28 +81,6 @@ BROWSE_PATH_KEY = "browse_path"
 BROWSE_PAGE_KEY = "browse_page"
 BROWSE_DIRS_KEY = "browse_dirs"  # Cache of subdirs for current path
 UNBOUND_WINDOWS_KEY = "unbound_windows"  # Cache of (name, cwd) tuples
-
-# Project markers: filename → badge icon (checked via os.scandir)
-_PROJECT_MARKERS: dict[str, str] = {
-    ".git": "\u2699",
-    "pyproject.toml": "\U0001f40d",
-    "Cargo.toml": "\U0001f980",
-    "go.mod": "\U0001f439",
-    "package.json": "\U0001f4e6",
-    "Makefile": "\U0001f527",
-}
-
-
-def _detect_project_badge(parent: Path, name: str) -> str:
-    """Return a project badge icon for a subdirectory, or empty string."""
-    subdir = parent / name
-    for marker, icon in _PROJECT_MARKERS.items():
-        try:
-            if (subdir / marker).exists():
-                return icon
-        except OSError:
-            continue
-    return ""
 
 
 def clear_browse_state(user_data: dict | None) -> None:
@@ -148,7 +133,7 @@ def build_window_picker(
     ]
     for _wid, name, cwd in windows:
         display_cwd = cwd.replace(str(Path.home()), "~")
-        lines.append(f"• 🖥 `{name}` — {display_cwd}")
+        lines.append(f"• `{name}` — {display_cwd}")
 
     buttons: list[list[InlineKeyboardButton]] = []
     for i in range(0, len(windows), 2):
@@ -157,15 +142,13 @@ def build_window_picker(
             name = windows[i + j][1]
             display = name[:12] + "…" if len(name) > _MAX_BUTTON_LABEL_LEN else name
             row.append(
-                InlineKeyboardButton(
-                    f"🖥 {display}", callback_data=f"{CB_WIN_BIND}{i + j}"
-                )
+                InlineKeyboardButton(display, callback_data=f"{CB_WIN_BIND}{i + j}")
             )
         buttons.append(row)
 
     buttons.append(
         [
-            InlineKeyboardButton("➕ New Session", callback_data=CB_WIN_NEW),
+            InlineKeyboardButton("New session", callback_data=CB_WIN_NEW),
             InlineKeyboardButton("Cancel", callback_data=CB_WIN_CANCEL),
         ]
     )
@@ -217,18 +200,18 @@ def _build_favorites_buttons(
             if len(display_fav) > _MAX_FAV_LABEL_LEN
             else display_fav
         )
-        star_icon = "⭐" if fav_path in starred_set else "☆"
+        pin_action = "Unpin" if fav_path in starred_set else "Pin"
         rows.append(
             [
-                InlineKeyboardButton(f"📌 {label}", callback_data=f"{CB_DIR_FAV}{idx}"),
-                InlineKeyboardButton(star_icon, callback_data=f"{CB_DIR_STAR}{idx}"),
+                InlineKeyboardButton(label, callback_data=f"{CB_DIR_FAV}{idx}"),
+                InlineKeyboardButton(pin_action, callback_data=f"{CB_DIR_STAR}{idx}"),
             ]
         )
     return rows
 
 
 def build_directory_browser(
-    current_path: str, page: int = 0, user_id: int | None = None
+    current_path: str, page: int = 0
 ) -> tuple[str, InlineKeyboardMarkup, list[str]]:
     """Build directory browser UI.
 
@@ -237,7 +220,7 @@ def build_directory_browser(
 
     path = Path(current_path).expanduser().resolve()
     if not path.exists() or not path.is_dir():
-        path = Path.cwd()
+        path = Path(default_browse_path())
 
     try:
         subdirs = sorted(
@@ -251,10 +234,7 @@ def build_directory_browser(
     except (PermissionError, OSError):  # fmt: skip
         subdirs = []
 
-    favorites, starred_set = get_favorites(user_id)
-    buttons: list[list[InlineKeyboardButton]] = _build_favorites_buttons(
-        favorites, starred_set
-    )
+    buttons: list[list[InlineKeyboardButton]] = []
 
     # Subdirectory listing
     total_pages = max(1, (len(subdirs) + DIRS_PER_PAGE - 1) // DIRS_PER_PAGE)
@@ -268,13 +248,9 @@ def build_directory_browser(
             display = (
                 name[:12] + "\u2026" if len(name) > _MAX_BUTTON_LABEL_LEN else name
             )
-            badge = _detect_project_badge(path, name)
-            icon = badge if badge else "\U0001f4c1"
             idx = start + i + j
             row.append(
-                InlineKeyboardButton(
-                    f"{icon} {display}", callback_data=f"{CB_DIR_SELECT}{idx}"
-                )
+                InlineKeyboardButton(display, callback_data=f"{CB_DIR_SELECT}{idx}")
             )
         buttons.append(row)
 
@@ -297,13 +273,13 @@ def build_directory_browser(
     # Allow going up unless at filesystem root
     if path != path.parent:
         action_row.append(InlineKeyboardButton("..", callback_data=CB_DIR_UP))
-    action_row.append(InlineKeyboardButton("\U0001f3e0", callback_data=CB_DIR_HOME))
+    action_row.append(InlineKeyboardButton("Home", callback_data=CB_DIR_HOME))
     action_row.append(InlineKeyboardButton("Select", callback_data=CB_DIR_CONFIRM))
     action_row.append(InlineKeyboardButton("Cancel", callback_data=CB_DIR_CANCEL))
     buttons.append(action_row)
 
     display_path = str(path).replace(str(Path.home()), "~")
-    if not subdirs and not favorites:
+    if not subdirs:
         text = f"*Select Working Directory*\n\nCurrent: `{display_path}`\n\n_(No subdirectories)_"
     else:
         text = f"*Select Working Directory*\n\nCurrent: `{display_path}`\n\nTap a folder to enter, or select current directory"
@@ -311,14 +287,10 @@ def build_directory_browser(
     return text, InlineKeyboardMarkup(buttons), subdirs
 
 
-# Provider display metadata: (label, icon)
-_PROVIDER_META: dict[str, tuple[str, str]] = {
-    "antigravity": ("Antigravity", "\U0001f30c"),
-    "claude": ("Claude", "\U0001f7e0"),
-    "codex": ("Codex", "\U0001f9e9"),
-    "gemini": ("Gemini", "\u264a"),
-    "pi": ("Pi", "\U0001f916"),
-    "shell": ("Shell", "\U0001f41a"),
+# Provider display names used in the launch flow.
+_PROVIDER_META: dict[str, str] = {
+    "claude": "Claude",
+    "pi": "Pi",
 }
 
 
@@ -332,12 +304,12 @@ def build_provider_picker(selected_path: str) -> tuple[str, InlineKeyboardMarkup
         f"*Select Provider*\n\nDirectory: `{display_path}`\n\nWhich agent CLI to use?"
     )
     buttons: list[list[InlineKeyboardButton]] = []
-    for name, (label, icon) in _PROVIDER_META.items():
+    for name, label in _PROVIDER_META.items():
         suffix = " (default)" if name == "claude" else ""
         buttons.append(
             [
                 InlineKeyboardButton(
-                    f"{icon} {label}{suffix}",
+                    f"{label}{suffix}",
                     callback_data=f"{CB_PROV_SELECT}{name}",
                 )
             ]
@@ -354,25 +326,23 @@ def build_mode_picker(
     Returns: (text, keyboard).
     """
     display_path = selected_path.replace(str(Path.home()), "~")
-    provider_label, provider_icon = _PROVIDER_META.get(
-        provider_name, (provider_name.title(), "🤖")
-    )
+    provider_label = _PROVIDER_META.get(provider_name, provider_name.title())
     text = (
         "*Select Session Mode*\n\n"
         f"Directory: `{display_path}`\n"
-        f"Provider: {provider_icon} {provider_label}\n\n"
+        f"Provider: {provider_label}\n\n"
         "Choose how many approvals you want for this session."
     )
     buttons = [
         [
             InlineKeyboardButton(
-                "✅ Standard",
+                "Standard",
                 callback_data=f"{CB_MODE_SELECT}{provider_name}:normal",
             )
         ],
         [
             InlineKeyboardButton(
-                "🎲 YOLO",
+                "YOLO",
                 callback_data=f"{CB_MODE_SELECT}{provider_name}:yolo",
             )
         ],
@@ -421,13 +391,14 @@ def build_workspace_picker(
         buttons.append(
             [
                 InlineKeyboardButton(
-                    f"🗂 {trunc_label} ({display_cwd})",
+                    f"{trunc_label} ({display_cwd})",
                     callback_data=f"{CB_WS_SELECT}{i}",
                 )
             ]
         )
-    buttons.append(
-        [InlineKeyboardButton("🔍 Auto-resolve from folder", callback_data=CB_WS_SKIP)]
+    buttons.insert(
+        0,
+        [InlineKeyboardButton("Use folder (automatic)", callback_data=CB_WS_SKIP)],
     )
     buttons.append([InlineKeyboardButton("Cancel", callback_data=CB_DIR_CANCEL)])
     return text, InlineKeyboardMarkup(buttons)
@@ -455,11 +426,11 @@ def build_worktree_picker(
     buttons = [
         [
             InlineKeyboardButton(
-                f"🌿 Use current ({current_branch})",
+                f"Use current branch ({current_branch})",
                 callback_data=CB_WT_USE_CURRENT,
             )
         ],
-        [InlineKeyboardButton("➕ New worktree", callback_data=CB_WT_NEW)],
+        [InlineKeyboardButton("Create worktree", callback_data=CB_WT_NEW)],
         [InlineKeyboardButton("Cancel", callback_data=CB_DIR_CANCEL)],
     ]
     return text, InlineKeyboardMarkup(buttons)
@@ -486,13 +457,13 @@ def build_worktree_confirm(
     ]
     if dirty:
         lines.append(
-            "\n⚠️ The source repo has uncommitted changes. The worktree "
+            "\nThe source repo has uncommitted changes. The worktree "
             "starts from HEAD; uncommitted work stays where it is."
         )
     text = "\n".join(lines)
     buttons = [
-        [InlineKeyboardButton("✅ Use this", callback_data=CB_WT_CONFIRM)],
-        [InlineKeyboardButton("✏️ Edit name", callback_data=CB_WT_EDIT_NAME)],
+        [InlineKeyboardButton("Use this", callback_data=CB_WT_CONFIRM)],
+        [InlineKeyboardButton("Edit name", callback_data=CB_WT_EDIT_NAME)],
         [InlineKeyboardButton("Cancel", callback_data=CB_DIR_CANCEL)],
     ]
     return text, InlineKeyboardMarkup(buttons)

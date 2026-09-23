@@ -42,17 +42,23 @@ class TestBuildProviderPicker:
         ("provider", "label"),
         [
             ("claude", "Claude"),
-            ("codex", "Codex"),
-            ("gemini", "Gemini"),
             ("pi", "Pi"),
-            ("shell", "Shell"),
         ],
     )
-    def test_offers_every_provider(self, provider: str, label: str) -> None:
+    def test_offers_enabled_providers(self, provider: str, label: str) -> None:
         _text, keyboard = build_provider_picker("/tmp/test")
         buttons = _buttons(keyboard)
         assert any(label in btn.text for btn in buttons)
         assert f"{CB_PROV_SELECT}{provider}" in [btn.callback_data for btn in buttons]
+
+    def test_hides_other_providers(self) -> None:
+        _text, keyboard = build_provider_picker("/tmp/test")
+        callback_data = [btn.callback_data for btn in _buttons(keyboard)]
+        assert callback_data == [
+            f"{CB_PROV_SELECT}claude",
+            f"{CB_PROV_SELECT}pi",
+            CB_DIR_CANCEL,
+        ]
 
     def test_claude_marked_as_default(self) -> None:
         _text, keyboard = build_provider_picker("/tmp/test")

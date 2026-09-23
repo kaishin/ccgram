@@ -14,6 +14,7 @@ from ccgram.handlers.callback_data import (
 )
 from ccgram.handlers.topics.directory_browser import (
     build_directory_browser,
+    default_browse_path,
     build_worktree_confirm,
     build_worktree_picker,
     get_favorites,
@@ -106,6 +107,47 @@ class TestGetFavorites:
 
         favorites, _starred = get_favorites(100)
         assert favorites == []
+
+
+class TestDefaultBrowsePath:
+    def test_defaults_to_developer_directory(self, tmp_path: Path) -> None:
+        developer_dir = tmp_path / "Developer"
+        developer_dir.mkdir()
+
+        with patch(
+            "ccgram.handlers.topics.directory_browser.Path.home", return_value=tmp_path
+        ):
+            assert default_browse_path() == str(developer_dir)
+
+    def test_falls_back_to_home_if_developer_directory_is_missing(
+        self, tmp_path: Path
+    ) -> None:
+        with patch(
+            "ccgram.handlers.topics.directory_browser.Path.home", return_value=tmp_path
+        ):
+            assert default_browse_path() == str(tmp_path)
+
+
+class TestDirectoryBrowserOptions:
+    def test_does_not_prepend_pins_or_recent_paths(
+        self, tmp_path: Path, mock_session_manager: Mock
+    ) -> None:
+        pinned = tmp_path / "pinned"
+        recent = tmp_path / "recent"
+        pinned.mkdir()
+        recent.mkdir()
+        mock_session_manager.get_user_starred.return_value = [str(pinned)]
+        mock_session_manager.get_user_mru.return_value = [str(pinned), str(recent)]
+
+        with patch("ccgram.handlers.topics.directory_browser.config") as mock_cfg:
+            mock_cfg.show_hidden_dirs = False
+            _text, keyboard, _subdirs = build_directory_browser(str(tmp_path))
+
+        rows = keyboard.inline_keyboard
+        labels = [button.text for row in rows for button in row]
+        assert "Pin" not in labels
+        assert "Unpin" not in labels
+        assert labels[:2] == ["pinned", "recent"]
 
 
 class TestHiddenDirs:

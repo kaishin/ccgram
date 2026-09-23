@@ -78,7 +78,7 @@ async def _validate_provider_select(
                 existing_wid,
                 display,
             )
-            await safe_edit(query, f"✅ Already bound to window {display}.")
+            await safe_edit(query, f"Already bound to window {display}.")
             return False
 
     return True
@@ -107,7 +107,7 @@ async def _handle_provider_select(
     selected_path = _required_selected_path(context)
     if selected_path is None:
         await query.answer()
-        await safe_edit(query, "❌ Selection expired. Tap Cancel and retry.")
+        await safe_edit(query, "Selection expired. Tap Cancel and retry.")
         return
     pending_thread_id: int | None = (
         context.user_data.get(PENDING_THREAD_ID) if context.user_data else None
@@ -176,7 +176,7 @@ async def _handle_mode_select(
     selected_path = _required_selected_path(context)
     if selected_path is None:
         await query.answer()
-        await safe_edit(query, "❌ Selection expired. Tap Cancel and retry.")
+        await safe_edit(query, "Selection expired. Tap Cancel and retry.")
         return
     pending_thread_id: int | None = (
         context.user_data.get(PENDING_THREAD_ID) if context.user_data else None

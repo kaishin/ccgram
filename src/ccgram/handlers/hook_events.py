@@ -21,6 +21,7 @@ from ..session_state_ports.live_session_state import has_task_snapshot
 from ..telegram_client import TelegramClient
 from ..thread_router import thread_router
 from ..window_query import view_window
+from .callback_data import IDLE_STATUS_TEXT
 from .interactive import (
     clear_interactive_mode,
     get_interactive_window,
@@ -213,9 +214,11 @@ async def _handle_stop(event: HookEvent, client: TelegramClient) -> None:
                 window_id, num_turns=num_turns
             )
         else:
-            status_text = "✓ Ready"
+            status_text = IDLE_STATUS_TEXT
         if summary and status_text:
-            status_text = status_text.replace("✓ Ready", f"✓ Done — {summary}", 1)
+            status_text = status_text.replace(
+                IDLE_STATUS_TEXT, f"✅ Done — {summary}", 1
+            )
         await enqueue_status_update(
             client, user_id, window_id, status_text, thread_id=thread_id
         )

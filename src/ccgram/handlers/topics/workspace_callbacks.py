@@ -7,6 +7,7 @@ helpers consumed by multiple steps in the flow.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
@@ -62,8 +63,27 @@ async def _show_workspace_picker_or_provider(
         if context is not None and context.user_data is not None:
             context.user_data[PENDING_WORKSPACES] = ws_triples
         if ws_triples:
-            text, keyboard = build_workspace_picker(selected_path, ws_triples)
-            await safe_edit(query, text, reply_markup=keyboard)
+            selected = Path(selected_path).expanduser().resolve()
+            exact_matches = [
+                workspace_id
+                for workspace_id, _label, cwd in ws_triples
+                if Path(cwd).expanduser().resolve() == selected
+            ]
+            if len(exact_matches) == 1:
+                if context is not None and context.user_data is not None:
+                    context.user_data[PENDING_WORKSPACE_ID] = exact_matches[0]
+                await _show_provider_picker(query, selected_path)
+                return
+            if len(exact_matches) > 1:
+                text, keyboard = build_workspace_picker(selected_path, ws_triples)
+                await safe_edit(query, text, reply_markup=keyboard)
+                return
+            # No existing workspace matches this folder. Let Herdr resolve or
+            # create the appropriate workspace from cwd instead of forcing an
+            # unrelated workspace choice.
+            if context is not None and context.user_data is not None:
+                context.user_data.pop(PENDING_WORKSPACE_ID, None)
+            await _show_provider_picker(query, selected_path)
             return
         # No workspaces returned (older herdr) — fall through to provider pick
     await _show_provider_picker(query, selected_path)
@@ -98,14 +118,14 @@ async def _handle_workspace_callback(
     try:
         idx = int(data[len(CB_WS_SELECT) :])
     except ValueError, IndexError:
-        await safe_edit(query, "❌ Invalid workspace selection. Tap Cancel and retry.")
+        await safe_edit(query, "Invalid workspace selection. Tap Cancel and retry.")
         return
 
     workspaces: list[tuple[str, str, str]] = (
         context.user_data.get(PENDING_WORKSPACES, []) if context.user_data else []
     )
     if idx < 0 or idx >= len(workspaces):
-        await safe_edit(query, "❌ Workspace list changed. Tap Cancel and retry.")
+        await safe_edit(query, "Workspace list changed. Tap Cancel and retry.")
         return
 
     chosen_ws_id = workspaces[idx][0]

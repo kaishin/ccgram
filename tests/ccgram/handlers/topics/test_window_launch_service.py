@@ -351,7 +351,7 @@ class TestLaunchWindowSuccess:
         m.orchestration.register_pending_creation.assert_called_once_with("@5")
         m.orchestration.clear_pending_creation.assert_called_once_with("@5")
         m.edit.assert_awaited_once()
-        assert "✅" in m.edit.call_args[0][1]
+        assert "Bound to this topic" in m.edit.call_args[0][1]
 
     @patch(f"{_MODULE}_accept_yolo_confirmation", new_callable=AsyncMock)
     async def test_yolo_creation_guard_outlives_configured_confirmation(
@@ -435,7 +435,7 @@ class TestLaunchWindowFailure:
         assert result.success is False
         m.router.bind_thread.assert_not_called()
         m.edit.assert_awaited_once()
-        assert "❌" in m.edit.call_args[0][1]
+        assert "tmux error" in m.edit.call_args[0][1]
         assert PENDING_THREAD_ID not in user_data
         assert PENDING_THREAD_TEXT not in user_data
 
@@ -585,7 +585,7 @@ class TestLaunchWindowFailure:
             "claim-1", target_confirmed_absent=True
         )
         assert cleanup_order == ["clear-pending"]
-        assert "❌" in m.edit.call_args.args[1]
+        assert "Session did not register" in m.edit.call_args.args[1]
 
     @pytest.mark.parametrize("presence", [True, None], ids=["live", "unknown"])
     async def test_session_map_timeout_quarantines_target_without_killing(

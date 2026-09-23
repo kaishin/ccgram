@@ -21,6 +21,11 @@ from ..polling_types import (
 def build_status_line(status: StatusUpdate | None) -> str | None:
     if not status or status.is_interactive:
         return None
+    normalized = status.raw_text.strip().casefold()
+    if normalized == "working":
+        return "💬 Working..."
+    if normalized in {"waiting", "waiting for input"}:
+        return "⏳ Waiting for input..."
     return status.raw_text
 
 

@@ -95,10 +95,10 @@ class TestShowWorkspacePickerOrProvider:
         "ccgram.handlers.topics.workspace_callbacks.safe_edit", new_callable=AsyncMock
     )
     @patch("ccgram.handlers.topics.workspace_callbacks.tmux_manager")
-    async def test_herdr_with_workspaces_shows_picker(
+    async def test_unrelated_workspaces_do_not_block_folder_selection(
         self, mock_mux: MagicMock, mock_edit: AsyncMock, tmp_path: Path
     ) -> None:
-        """On herdr with workspaces, workspace picker is shown."""
+        """If none match the selected folder, use folder-based resolution."""
         mock_mux.capabilities = _capabilities(native_agent_status=True)
         mock_mux.list_workspaces = AsyncMock(return_value=_WORKSPACES)
 
@@ -107,11 +107,57 @@ class TestShowWorkspacePickerOrProvider:
         await _show_workspace_picker_or_provider(_make_query(), str(tmp_path), context)
 
         text = mock_edit.call_args[0][1]
-        assert "Select Workspace" in text
+        assert "Select Provider" in text
+        assert "Select Workspace" not in text
+        assert PENDING_WORKSPACE_ID not in user_data
         assert user_data[PENDING_WORKSPACES] == [
             ("ws1", "my-project", "/home/user/project"),
             ("ws2", "other", "/home/user/other"),
         ]
+
+    @patch(
+        "ccgram.handlers.topics.workspace_callbacks.safe_edit", new_callable=AsyncMock
+    )
+    @patch("ccgram.handlers.topics.workspace_callbacks.tmux_manager")
+    async def test_exactly_matching_workspace_is_selected_automatically(
+        self, mock_mux: MagicMock, mock_edit: AsyncMock, tmp_path: Path
+    ) -> None:
+        mock_mux.capabilities = _capabilities(native_agent_status=True)
+        mock_mux.list_workspaces = AsyncMock(
+            return_value=[WorkspaceRef("ws-exact", "project", str(tmp_path))]
+        )
+        user_data: dict = {}
+
+        await _show_workspace_picker_or_provider(
+            _make_query(), str(tmp_path), _make_context(user_data)
+        )
+
+        assert user_data[PENDING_WORKSPACE_ID] == "ws-exact"
+        assert "Select Provider" in mock_edit.call_args[0][1]
+        assert "Select Workspace" not in mock_edit.call_args[0][1]
+
+    @patch(
+        "ccgram.handlers.topics.workspace_callbacks.safe_edit", new_callable=AsyncMock
+    )
+    @patch("ccgram.handlers.topics.workspace_callbacks.tmux_manager")
+    async def test_duplicate_exact_workspaces_show_picker_with_folder_default(
+        self, mock_mux: MagicMock, mock_edit: AsyncMock, tmp_path: Path
+    ) -> None:
+        mock_mux.capabilities = _capabilities(native_agent_status=True)
+        mock_mux.list_workspaces = AsyncMock(
+            return_value=[
+                WorkspaceRef("ws1", "first", str(tmp_path)),
+                WorkspaceRef("ws2", "second", str(tmp_path)),
+            ]
+        )
+        await _show_workspace_picker_or_provider(
+            _make_query(), str(tmp_path), _make_context()
+        )
+
+        assert "Select Workspace" in mock_edit.call_args[0][1]
+        keyboard = mock_edit.call_args.kwargs["reply_markup"].inline_keyboard
+        assert keyboard[0][0].text == "Use folder (automatic)"
+        assert all("🗂" not in row[0].text for row in keyboard)
 
     @patch(
         "ccgram.handlers.topics.workspace_callbacks.safe_edit", new_callable=AsyncMock
@@ -145,7 +191,7 @@ class TestShowWorkspacePickerOrProvider:
         context = _make_context()
         await _show_workspace_picker_or_provider(_make_query(), str(tmp_path), context)
 
-        assert "Select Workspace" in mock_edit.call_args[0][1]
+        assert "Select Provider" in mock_edit.call_args[0][1]
         mock_mux.list_workspaces.assert_awaited_once()
 
     @patch(
@@ -273,7 +319,6 @@ class TestHandleWorkspaceCallback:
         )
 
         text = mock_edit.call_args[0][1]
-        assert text.startswith("❌")
         assert expected in text
         assert PENDING_WORKSPACE_ID not in user_data
 

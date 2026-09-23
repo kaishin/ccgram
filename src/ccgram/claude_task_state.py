@@ -15,7 +15,7 @@ from .topic_state_registry import topic_state
 
 # Idle status sentinel — lives here (core) rather than in handlers/callback_data
 # to avoid a core → handler layer violation.
-IDLE_STATUS_TEXT = "\u2713 Ready"
+IDLE_STATUS_TEXT = "✅ Ready"
 
 _WAITING_INPUT = "Waiting for input"
 _PLAN_APPROVAL = "Plan approval needed"

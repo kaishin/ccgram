@@ -125,7 +125,7 @@ async def _abort_topic_creation(
     flag) keeps a sticky "creating" guard from rejecting every future
     worktree confirm — the worktree, if any, was already created on disk.
     """
-    await safe_edit(query, f"❌ {message}")
+    await safe_edit(query, message)
     if context.user_data is not None:
         context.user_data.pop(PENDING_THREAD_ID, None)
         context.user_data.pop(PENDING_THREAD_TEXT, None)
@@ -696,7 +696,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
                 "Could not verify the new session; ccgram kept it quarantined "
                 "for recovery."
             )
-            await safe_edit(query, f"⚠ {message}")
+            await safe_edit(query, message)
             return WindowLaunchResult(success=False, error_message=message)
         if presence is False:
             await _finish_failed_provisioning(
@@ -722,7 +722,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
         )
         # Keep pending thread/text state so the recovery flow can finish the
         # exact topic once the late hook registration becomes observable.
-        await safe_edit(query, f"⚠ {message}")
+        await safe_edit(query, message)
         return WindowLaunchResult(success=False, error_message=message)
 
     if claim_id is not None and pending_thread_id is not None:
@@ -758,7 +758,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
     # the no-thread path, which otherwise has no topic bind to release the guard.
     topic_orchestration.clear_pending_creation(created_wid)
     if pending_thread_id is None:
-        await safe_edit(query, f"✅ {message}")
+        await safe_edit(query, message)
         return WindowLaunchResult(success=True, window_id=created_wid)
 
     chat_id = thread_router.resolve_chat_id(user_id, pending_thread_id)
@@ -773,7 +773,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
 
     await safe_edit(
         query,
-        f"✅ {message}\n\nBound to this topic. Send messages here.",
+        f"{message}\n\nBound to this topic. Send messages here.",
     )
 
     pending_text = request.pending_text
@@ -825,7 +825,7 @@ async def launch_window(  # noqa: C901, PLR0911, PLR0912, PLR0915
                 await safe_send(
                     PTBTelegramClient(context.bot),
                     thread_router.resolve_chat_id(user_id, pending_thread_id),
-                    f"❌ Failed to send pending message: {send_msg}",
+                    f"Failed to send pending message: {send_msg}",
                     message_thread_id=pending_thread_id,
                 )
     elif context.user_data is not None:

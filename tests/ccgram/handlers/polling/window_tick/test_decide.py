@@ -207,9 +207,14 @@ class TestBuildStatusLine:
         status = StatusUpdate(raw_text="line1\nline2", display_label="")
         assert build_status_line(status) == "line1\nline2"
 
-    def test_single_line_passes_through_unchanged(self):
-        result = build_status_line(StatusUpdate(raw_text="Working", display_label=""))
-        assert result == "Working"
+    def test_working_is_formatted_for_display(self):
+        result = build_status_line(StatusUpdate(raw_text="working", display_label=""))
+        assert result == "💬 Working..."
+
+    @pytest.mark.parametrize("raw_text", ["waiting", "waiting for input"])
+    def test_waiting_is_formatted_for_display(self, raw_text):
+        result = build_status_line(StatusUpdate(raw_text=raw_text, display_label=""))
+        assert result == "⏳ Waiting for input..."
 
 
 class TestIsShellPrompt:
