@@ -74,7 +74,13 @@ def _cached_topic_name(router: ThreadRouter, target_id: str) -> str:
     """Choose a recovered topic name from cached window state."""
     view = window_query.view_window(target_id)
     if view is not None:
-        if view.window_name:
+        # A window_name equal to the target id is a registration placeholder,
+        # not a title: the hookless session_map write falls back to the raw
+        # target when no display name was ever seeded. Titling a topic with
+        # the opaque target is never right, so prefer the cwd basename.
+        if view.window_name and canonical_window_id(
+            view.window_name
+        ) != canonical_window_id(target_id):
             return view.window_name
         if view.cwd:
             return Path(view.cwd).name
@@ -244,15 +250,53 @@ async def _recreate_deleted_topic(
         return _recreation_outcome(router, prepared, created=created)
 
 
-async def _commit_present_topic(router: ThreadRouter, claim: TopicProvisioning) -> str:
-    """Commit a proven-live topic without evicting a concurrent target bind."""
-    assert claim.target_id is not None
+async def _commit_present_topic(
+    client: TelegramClient, router: ThreadRouter, claim: TopicProvisioning
+) -> str:
+    """Commit a proven-live topic without evicting a concurrent target bind.
+
+    Binding here is also a bind-time titling point: the topic-title watcher
+    only renames when the live label differs from the stored display name,
+    so a commit that never retitles the topic — and never seeds the display
+    name — strands a recycled topic's stale title forever. Rename the topic
+    to the best cached name and seed exactly the name that was applied, so
+    the stored name keeps its "what the topic currently says" meaning. When
+    the only name available is the raw target placeholder, skip the rename
+    but still seed it: the placeholder provably differs from any live label,
+    so the watcher takes over from there.
+    """
+    assert claim.target_id is not None and claim.thread_id is not None
     async with _window_topic_lock(canonical_window_id(claim.target_id)):
         if not _claim_is_current(router, claim):
             return "changed"
         if _target_bound_in_chat(router, claim):
             return "unresolved"
-        committed = router.commit_topic_provisioning(claim.claim_id)
+        topic_name = _cached_topic_name(router, claim.target_id)
+        placeholder = canonical_window_id(topic_name) == canonical_window_id(
+            claim.target_id
+        )
+        renamed = False
+        if not placeholder:
+            try:
+                await client.edit_forum_topic(
+                    chat_id=claim.chat_id,
+                    message_thread_id=claim.thread_id,
+                    name=topic_name,
+                )
+                renamed = True
+            except Exception:
+                # Fail open: the binding still commits below, but without a
+                # seeded name — seeding a name the topic does not show would
+                # tell the watcher the title is already correct.
+                logger.exception(
+                    "recovered topic rename failed; binding without a title seed",
+                    claim_id=claim.claim_id,
+                    thread_id=claim.thread_id,
+                )
+        committed = router.commit_topic_provisioning(
+            claim.claim_id,
+            window_name=topic_name if renamed or placeholder else "",
+        )
         session_manager.flush_state()
         return "bound" if committed else "changed"
 
@@ -285,7 +329,7 @@ async def _recover_present_topic(
     if topic_exists is None:
         return "unresolved"
     if topic_exists:
-        outcome = await _commit_present_topic(router, claim)
+        outcome = await _commit_present_topic(client, router, claim)
         return "rate_limited" if cleanup_rate_limited else outcome
 
     topic_name = _cached_topic_name(router, claim.target_id)

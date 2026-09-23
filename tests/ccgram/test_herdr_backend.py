@@ -1578,6 +1578,49 @@ async def test_missing_label_uses_fallback_without_hiding_other_sessions() -> No
     }
 
 
+async def test_numeric_default_tab_label_is_never_topic_eligible() -> None:
+    fresh = _agent(value="fresh", pane_id="w2:p1", tab_id="w2:t1")
+    named = _agent(value="named", pane_id="w2:p2", tab_id="w2:t2")
+    fake = (
+        FakeHerdr()
+        .on("agent", "list", out=_agents(fresh, named))
+        .on(
+            "workspace",
+            "list",
+            out=_result(workspaces=[{"workspace_id": "w2", "label": "workspace"}]),
+        )
+        .on(
+            "tab",
+            "list",
+            out=_result(
+                tabs=[
+                    {"tab_id": "w2:t1", "label": "1"},
+                    {"tab_id": "w2:t2", "label": "Fix The Thing"},
+                ]
+            ),
+        )
+    )
+    manager = _manager(fake)
+
+    # Herdr's default tab label is the tab number. Like tmux's placeholder
+    # main window, a bare number is not a session topic: the fresh session
+    # stays out of the adoption picker while it carries the placeholder, and
+    # reconciliation keeps it for liveness with topic_eligible False, so
+    # discovery never auto-creates a topic titled "1" and the title watcher
+    # never syncs one. The stamp flips by itself once the renamer plugin
+    # retitles the tab.
+    assert [(w.window_id, w.window_name) for w in await manager.list_windows()] == [
+        (_target("named"), "Fix The Thing")
+    ]
+
+    reconciliation = await manager.list_windows_for_reconciliation()
+    assert reconciliation is not None
+    by_id = {w.window_id: w for w in reconciliation}
+    assert by_id[_target("fresh")].window_name == "1"
+    assert by_id[_target("fresh")].topic_eligible is False
+    assert by_id[_target("named")].topic_eligible is True
+
+
 async def test_malformed_prefixed_target_never_reads_agent_list() -> None:
     fake = _live_fake(_agent())
     assert (

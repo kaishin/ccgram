@@ -247,6 +247,136 @@ async def test_deleted_topic_recreation_uses_cached_window_name():
     )
 
 
+async def test_commit_present_topic_renames_and_seeds_live_label():
+    router, _claim = _restored_claim()
+    client = AsyncMock()
+    view = MagicMock(window_name="Project Status Check", cwd="/x/chunky-kong")
+    with (
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_presence",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_query.view_window",
+            return_value=view,
+        ),
+    ):
+        assert await recover_topic_provisioning(client, router=router) == {"bound": 1}
+
+    # The recovery commit is a bind-time titling point: the topic is renamed
+    # and the applied name is seeded, so the title watcher can follow later
+    # Herdr renames (a bare commit seeds nothing, and the watcher only renames
+    # when live differs from stored).
+    assert router.get_window_for_chat_thread(-100, 42) == "@2"
+    assert router.get_display_name("@2") == "Project Status Check"
+    client.edit_forum_topic.assert_awaited_once_with(
+        chat_id=-100, message_thread_id=42, name="Project Status Check"
+    )
+
+
+async def test_commit_present_topic_with_only_target_placeholder_skips_rename():
+    router, _claim = _restored_claim()
+    client = AsyncMock()
+    with (
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_presence",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_query.view_window",
+            return_value=None,
+        ),
+    ):
+        assert await recover_topic_provisioning(client, router=router) == {"bound": 1}
+
+    # The only available name is the raw target placeholder: never title a
+    # topic with it. It is still seeded, so the watcher — which can only see
+    # real live labels — takes the rename from there.
+    client.edit_forum_topic.assert_not_awaited()
+    assert router.get_window_for_chat_thread(-100, 42) == "@2"
+
+
+async def test_commit_present_topic_rename_failure_binds_without_title_seed():
+    router, _claim = _restored_claim()
+    client = AsyncMock()
+    client.edit_forum_topic.side_effect = BadRequest("topic not modified")
+    view = MagicMock(window_name="Project Status Check", cwd="/x/chunky-kong")
+    with (
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_presence",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_query.view_window",
+            return_value=view,
+        ),
+    ):
+        assert await recover_topic_provisioning(client, router=router) == {"bound": 1}
+
+    # The binding commits, but a name the topic does not show is never seeded:
+    # the stored name means "what the topic currently says", and seeding the
+    # failed name would tell the watcher the stale title is already correct.
+    assert router.get_window_for_chat_thread(-100, 42) == "@2"
+    assert router.get_display_name("@2") == "@2"
+
+
+async def test_recreation_ignores_raw_target_placeholder_window_name():
+    router, claim = _restored_claim(previous_target_id="@dead")
+    client = AsyncMock()
+    # The hookless session_map write falls back to the raw target when no
+    # display name was ever seeded; that placeholder must not title a topic.
+    view = MagicMock(window_name="@2", cwd="/home/x/chunky-kong")
+
+    async def recreate(
+        _client,
+        _chat_id,
+        _target_id,
+        _topic_name,
+        *,
+        user_id,
+        propagate_retry_after,
+        claim_id,
+    ):
+        return True
+
+    with (
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_presence",
+            new_callable=AsyncMock,
+            side_effect=[True, True],
+        ),
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.probe_topic_exists",
+            new_callable=AsyncMock,
+            return_value=False,
+        ),
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.create_topic_in_chat",
+            side_effect=recreate,
+        ) as create,
+        patch(
+            "ccgram.handlers.topics.topic_provisioning_recovery.window_query.view_window",
+            return_value=view,
+        ),
+    ):
+        assert await recover_topic_provisioning(client, router=router) == {
+            "recreated": 1
+        }
+
+    create.assert_awaited_once_with(
+        client,
+        -100,
+        "@2",
+        "chunky-kong",
+        user_id=1,
+        propagate_retry_after=True,
+        claim_id=claim.claim_id,
+    )
+
+
 async def test_deleted_topic_preserves_existing_target_binding():
     router, _claim = _restored_claim()
     router.bind_thread(1, 77, "@2", chat_id=-100)

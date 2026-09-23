@@ -115,6 +115,13 @@ _HERDR_CAPABILITIES = MultiplexerCapabilities(
 # never auto-adopts itself. ``find_window_by_id`` deliberately bypasses it.
 _INTERNAL_LABEL_RE = re.compile(r"^__.*__$")
 
+# Herdr assigns the tab number as a fresh tab's default label (``1``, ``2``…)
+# until something — typically the renamer plugin — gives it a real name. A
+# numeric label is a placeholder, never a session topic: it must not become a
+# Telegram topic title, so refs carrying one are stamped topic-ineligible
+# (they stay adoptable and keep liveness/addressing either way).
+_DEFAULT_TAB_LABEL_RE = re.compile(r"^\d+$")
+
 # The send-keys path uses tmux key vocabulary ("Up"/"BSpace"/…); map the few
 # that differ to herdr's kitty-style names. Unmapped tokens pass through.
 _KEY_ALIASES: Mapping[str, str] = {
@@ -726,7 +733,11 @@ class HerdrManager:
 
     @staticmethod
     def _live_ref(
-        record: HerdrLiveRecord, label: str, *, adoptable: bool = True
+        record: HerdrLiveRecord,
+        label: str,
+        *,
+        adoptable: bool = True,
+        topic_ready: bool = True,
     ) -> WindowRef:
         """Project a live record without exposing reusable locator aliases.
 
@@ -734,7 +745,9 @@ class HerdrManager:
         place that decides what counts: it emits a record only for a live agent
         carrying a guarded target, and a bare shell pane never reaches it. The
         verdict travels on the window so discovery needs no herdr-shaped check
-        of its own.
+        of its own. ``topic_ready`` is False while the tab still carries
+        herdr's default numeric label, so a placeholder never syncs into a
+        topic title; the stamp flips by itself once the tab is really named.
         """
         return WindowRef(
             window_id=record.target_id,
@@ -742,6 +755,7 @@ class HerdrManager:
             cwd=record.cwd,
             pane_current_command=record.composite.agent,
             topic_eligible=adoptable
+            and topic_ready
             and is_herdr_session_target(record.target_id)
             and bool(record.composite.agent.strip()),
         )
@@ -844,6 +858,7 @@ class HerdrManager:
                         record.pane_id,
                     ),
                     adoptable=not internal,
+                    topic_ready=not _DEFAULT_TAB_LABEL_RE.match(tab_label.strip()),
                 )
             )
         return refs
