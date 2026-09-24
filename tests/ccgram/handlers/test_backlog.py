@@ -10,7 +10,6 @@ from ccgram.delivery_contract import DeliveryOutcome, get_active_delivery_receip
 from ccgram.handlers.callback_data import (
     CB_STATUS_BACKLOG_CANCEL,
     CB_STATUS_BACKLOG_CONFIRM,
-    CB_STATUS_BACKLOG_JUMP,
 )
 from ccgram.handlers.messaging_pipeline import message_queue as mq
 from ccgram.handlers.messaging_pipeline.backlog import BacklogSnapshot
@@ -19,32 +18,9 @@ from ccgram.handlers.messaging_pipeline.message_task import (
     StatusUpdateTask,
 )
 from ccgram.handlers.status.status_bar_actions import _handle_status_bar_action
-from ccgram.handlers.status.status_bubble import (
-    build_status_keyboard,
-    format_backlog_status,
-)
+from ccgram.handlers.status.status_bubble import format_backlog_status
 from ccgram.monitor_state import BacklogSkipIntent, TrackedSession
 from ccgram.session_monitor import SessionMonitor
-
-
-def _callbacks(kb) -> list[str]:
-    return [
-        button.callback_data
-        for row in kb.inline_keyboard
-        for button in row
-        if isinstance(button.callback_data, str)
-    ]
-
-
-def test_jump_button_is_only_rendered_for_severe_backlog() -> None:
-    assert not any(
-        data.startswith(CB_STATUS_BACKLOG_JUMP)
-        for data in _callbacks(build_status_keyboard("@0", backlog_severe=False))
-    )
-    assert any(
-        data.startswith(CB_STATUS_BACKLOG_JUMP)
-        for data in _callbacks(build_status_keyboard("@0", backlog_severe=True))
-    )
 
 
 async def test_status_update_includes_severe_backlog_progress() -> None:
@@ -72,7 +48,7 @@ async def test_status_update_includes_severe_backlog_progress() -> None:
     call = send.await_args
     assert call is not None
     assert call.args[4] == "Working\nQueue: 100 pending · age 301s · delivery lag 1.0s"
-    assert call.kwargs["backlog_severe"] is True
+    assert "backlog_severe" not in call.kwargs
 
 
 async def test_status_update_hides_healthy_queue_telemetry() -> None:
@@ -101,7 +77,7 @@ async def test_status_update_hides_healthy_queue_telemetry() -> None:
     call = send.await_args
     assert call is not None
     assert call.args[4] == "Working"
-    assert call.kwargs["backlog_severe"] is False
+    assert "backlog_severe" not in call.kwargs
 
 
 def test_healthy_backlog_status_is_hidden() -> None:

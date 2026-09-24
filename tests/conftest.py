@@ -103,7 +103,7 @@ def _close_created_windows(created: list[tuple[str, str]]) -> None:
 
 @pytest.fixture(autouse=True)
 def _cleanup_created_windows(request, monkeypatch) -> Iterator[None]:
-    """Close multiplexer windows/tabs created by integration/e2e tests.
+    """Close multiplexer windows/tabs created by integration tests.
 
     Real-window tests spin up tmux windows and herdr tabs (plus the workspaces
     herdr auto-creates per cwd); when a test forgets — or fails before — its own
@@ -112,14 +112,11 @@ def _cleanup_created_windows(request, monkeypatch) -> Iterator[None]:
     creates, then close them after. Recording only this-test ids keeps it
     race-free under ``-n auto`` (it never touches another worker's windows).
 
-    Gated on the ``integration`` / ``e2e`` markers: unit tests drive the backends
-    with fake runners returning fake ids (e.g. ``"w2:t9"``) that must never reach
+    Gated on the ``integration`` marker: unit tests drive the backends with
+    fake runners returning fake ids (e.g. ``"w2:t9"``) that must never reach
     the live herdr socket.
     """
-    if not (
-        request.node.get_closest_marker("integration")
-        or request.node.get_closest_marker("e2e")
-    ):
+    if not request.node.get_closest_marker("integration"):
         yield
         return
 

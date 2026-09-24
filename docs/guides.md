@@ -151,47 +151,14 @@ The `start` command creates the tmux session/window if they do not exist, instal
 
 ## Testing
 
-CCGram has three test tiers:
+CCGram has two test tiers:
 
 | Tier        | Command                 | Time     | Requirements      |
 | ----------- | ----------------------- | -------- | ----------------- |
 | Unit        | `make test`             | ~10s     | None (all mocked) |
 | Integration | `make test-integration` | ~7s      | tmux              |
-| E2E         | `make test-e2e`         | ~3-4 min | tmux + agent CLIs |
 
 `make check` runs unit + integration tests together with formatting, linting, and type checking.
-
-### E2E Tests
-
-End-to-end tests exercise the full lifecycle: inject fake Telegram updates → real PTB application → real tmux windows → real agent CLI processes → intercept Bot API responses. Each provider's tests are skipped automatically if its CLI is not installed.
-
-**Prerequisites:**
-
-- tmux installed and in PATH
-- One or more agent CLIs installed and authenticated: `claude`, `codex`, `gemini`, `pi`
-
-**Test coverage per provider:**
-
-| Provider | Tests | Scenarios                                                                                                                                                    |
-| -------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Claude   | 9     | Lifecycle, `/sessions`, `/screenshot`, `/help` forwarding, recovery (fresh + continue), status transitions, multi-topic isolation, notification mode cycling |
-| Codex    | 3     | Lifecycle, command forwarding, recovery                                                                                                                      |
-| Gemini   | 3     | Lifecycle, command forwarding, recovery                                                                                                                      |
-| Pi       | —     | Unit + contract coverage only; no e2e lifecycle suite yet                                                                                                    |
-
-**How it works:** The Bot API HTTP layer is mocked — fake `Update` objects are injected via `app.process_update()` and all outgoing API calls are intercepted and recorded for assertions. The tests drive through the full topic binding flow (directory browser → optional worktree picker → provider picker → mode select → window creation) and verify agent processes launch, messages are forwarded, and responses are delivered.
-
-**Running:**
-
-```bash
-make test-e2e                                         # All providers
-uv run pytest tests/e2e/test_claude_lifecycle.py -v   # Claude only
-uv run pytest tests/e2e/test_codex_lifecycle.py -v    # Codex only
-uv run pytest tests/e2e/test_gemini_lifecycle.py -v   # Gemini only
-# Pi: covered by unit + contract tests in tests/ccgram/providers/test_pi.py
-```
-
-The tests create an isolated `ccgram-e2e` tmux session that does not interfere with a running `ccgram` instance. Safe to run from a tmux window.
 
 ## Configuration
 

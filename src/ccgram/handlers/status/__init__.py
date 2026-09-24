@@ -1,12 +1,12 @@
 """Status subpackage — status bubble, status-bar callbacks, topic icon.
 
 Bundles the modules that own the per-topic status surface:
-``status_bubble`` (status message lifecycle, keyboard layout, task-list
-formatting, status-to-content conversion), ``status_bar_actions``
-(inline-button callbacks for the status bubble — notify toggle, recall,
-remote control, esc, quick keys), and ``topic_icon`` (forum topic icon
-updates via Telegram's ``icon_custom_emoji`` parameter, with debounced
-state transitions).
+``status_bubble`` (status message lifecycle, task-list formatting,
+status-to-content conversion), ``status_bar_actions`` (status-bar
+callbacks that remain reachable via legacy inline buttons — notify
+toggle, recall, remote control, esc, quick keys), and ``topic_icon``
+(forum topic icon updates via Telegram's ``icon_custom_emoji``
+parameter, with debounced state transitions).
 
 Public surface re-exported here is the entry point for ``bot.py`` and
 the rest of ``handlers/``; internals stay in the per-module files.
@@ -14,7 +14,6 @@ the rest of ``handlers/``; internals stay in the per-module files.
 
 from .status_bar_actions import build_dashboard_button
 from .status_bubble import (
-    build_status_keyboard,
     clear_status_message,
     clear_status_msg_info,
     convert_status_to_content,
@@ -35,7 +34,6 @@ from .topic_icon import (
 __all__ = [
     "TOPIC_ICON_IDS",
     "build_dashboard_button",
-    "build_status_keyboard",
     "clear_disabled_chat",
     "clear_status_message",
     "clear_status_msg_info",

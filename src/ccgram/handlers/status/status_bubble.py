@@ -1,12 +1,10 @@
 """Status-bubble rendering, send/edit/clear, and task-status formatting.
 
-Owns the per-topic status message lifecycle: keyboard layout, send/edit/clear
-I/O, Claude task-list formatting, and status-to-content conversion.  The queue
-worker in ``message_queue`` delegates ``StatusUpdateTask`` / ``StatusClearTask``
+Owns the per-topic status message lifecycle: send/edit/clear I/O, Claude
+task-list formatting, and status-to-content conversion.  The queue worker
+in ``message_queue`` delegates ``StatusUpdateTask`` / ``StatusClearTask``
 here; ``convert_status_to_content`` is defined here and imported by
 ``message_queue._process_content_task``.
-
-Status-bar Row 1: [Esc] [Screenshot] [Last] [Get File].
 """
 
 from __future__ import annotations
@@ -15,7 +13,6 @@ import contextlib
 import time
 
 import structlog
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TelegramError
 
 from ...config import config
@@ -26,16 +23,6 @@ from ...telegram_rate_limiter import NO_RETRY_RATE_LIMIT_ARGS
 from ...thread_router import thread_router
 from ...window_state_ports.pane_state import PaneProjection, list_pane_projections
 
-from ..callback_tokens import compact_callback_data
-from ..callback_data import (
-    CB_STATUS_BACKLOG_JUMP,
-    CB_STATUS_ESC,
-    CB_STATUS_GET_FILE,
-    CB_STATUS_LAST_REPLY,
-    CB_STATUS_RECALL,
-    CB_STATUS_SCREENSHOT,
-    IDLE_STATUS_TEXT,
-)
 from ..messaging_pipeline.message_sender import edit_with_fallback, safe_send
 from ..messaging_pipeline.message_task import (
     StatusClearTask,
@@ -56,109 +43,6 @@ _backlog_status_cache: dict[tuple[int, int, str], tuple[float, str]] = {}
 _BACKLOG_STATUS_THROTTLE_SECONDS = 15.0
 SEVERE_BACKLOG_COUNT = 100
 SEVERE_BACKLOG_AGE_SECONDS = 300.0
-
-
-# ---------------------------------------------------------------------------
-# Keyboard builder
-# ---------------------------------------------------------------------------
-
-
-def build_status_keyboard(
-    window_id: str,
-    history: list[str] | None = None,
-    *,
-    user_id: int | None = None,
-    is_group: bool = False,
-    backlog_severe: bool = False,
-) -> InlineKeyboardMarkup:
-    """Build inline keyboard for status messages.
-
-    Layout:
-      Row 1 (optional): up to 2 history-recall buttons
-      Row 2: [Esc] [Screenshot] [Last] [Get File]
-      Row 3 (optional): [Dashboard] when Mini App is enabled, user_id is set,
-        and the chat is private (``is_group=False``). Telegram rejects
-        ``web_app`` buttons in groups and supergroups, so the button is hidden
-        there to stop every status-bubble edit from raising a TelegramError.
-    """
-    # Lazy: command_history → messaging_pipeline → status → status_bubble
-    # forms a cycle when imported at module top. Keep lazy.
-    # Lazy: command_history ↔ status cycle
-    from ..command_history import truncate_for_display
-
-    # Lazy: status_bubble ↔ status_bar_actions sibling cycle
-    from .status_bar_actions import build_dashboard_button
-
-    rows: list[list[InlineKeyboardButton]] = []
-
-    if history:
-        hist_row: list[InlineKeyboardButton] = []
-        for idx, cmd in enumerate(history[:2]):
-            label = truncate_for_display(cmd, 20)
-            hist_row.append(
-                InlineKeyboardButton(
-                    label,
-                    callback_data=compact_callback_data(
-                        CB_STATUS_RECALL,
-                        f"{CB_STATUS_RECALL}{window_id}:{idx}",
-                        window_id,
-                    ),
-                )
-            )
-        rows.append(hist_row)
-
-    rows.append(
-        [
-            InlineKeyboardButton(
-                "Esc",
-                callback_data=compact_callback_data(
-                    CB_STATUS_ESC, f"{CB_STATUS_ESC}{window_id}", window_id
-                ),
-            ),
-            InlineKeyboardButton(
-                "Screenshot",
-                callback_data=compact_callback_data(
-                    CB_STATUS_SCREENSHOT,
-                    f"{CB_STATUS_SCREENSHOT}{window_id}",
-                    window_id,
-                ),
-            ),
-            InlineKeyboardButton(
-                "Last",
-                callback_data=compact_callback_data(
-                    CB_STATUS_LAST_REPLY,
-                    f"{CB_STATUS_LAST_REPLY}{window_id}",
-                    window_id,
-                ),
-            ),
-            InlineKeyboardButton(
-                "Get File",
-                callback_data=compact_callback_data(
-                    CB_STATUS_GET_FILE,
-                    f"{CB_STATUS_GET_FILE}{window_id}",
-                    window_id,
-                ),
-            ),
-        ]
-    )
-    if backlog_severe:
-        rows.append(
-            [
-                InlineKeyboardButton(
-                    "Jump to live",
-                    callback_data=compact_callback_data(
-                        CB_STATUS_BACKLOG_JUMP,
-                        f"{CB_STATUS_BACKLOG_JUMP}{window_id}",
-                        window_id,
-                    ),
-                )
-            ]
-        )
-    if user_id is not None and not is_group:
-        dashboard = build_dashboard_button(window_id, user_id)
-        if dashboard is not None:
-            rows.append([dashboard])
-    return InlineKeyboardMarkup(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -197,19 +81,6 @@ def format_backlog_status(
     )
     _backlog_status_cache[key] = (now, line)
     return line, severe
-
-
-def _get_idle_history(
-    user_id: int, thread_id_or_0: int, status_text: str
-) -> list[str] | None:
-    """Return history list if the status is idle, else None."""
-    # Lazy: command_history → messaging_pipeline → status forms a cycle.
-    from ..command_history import get_history
-
-    first_line = status_text.split("\n", 1)[0]
-    if first_line != IDLE_STATUS_TEXT:
-        return None
-    return get_history(user_id, thread_id_or_0, limit=2) or None
 
 
 # ---------------------------------------------------------------------------
@@ -355,10 +226,8 @@ async def send_status_text(
     thread_id_or_0: int,
     window_id: str,
     text: str,
-    *,
-    backlog_severe: bool = False,
 ) -> None:
-    """Send a new status message with action buttons and track it.
+    """Send a new status message and track it.
 
     If a status message already exists for this (user, thread), edit it
     in-place via ``edit_with_fallback`` (entity-formatted, plain-text fallback
@@ -372,15 +241,6 @@ async def send_status_text(
     thread_id: int | None = thread_id_or_0 if thread_id_or_0 != 0 else None
     chat_id = thread_router.resolve_chat_id(user_id, thread_id)
 
-    history = _get_idle_history(user_id, thread_id_or_0, text)
-    keyboard = build_status_keyboard(
-        window_id,
-        history=history,
-        user_id=user_id,
-        is_group=(thread_id_or_0 != 0),
-        backlog_severe=backlog_severe,
-    )
-
     existing = _status_msg_info.get(skey)
     if existing:
         msg_id, stored_wid, last_text, stored_chat_id = existing
@@ -392,7 +252,6 @@ async def send_status_text(
                 stored_chat_id,
                 msg_id,
                 text,
-                reply_markup=keyboard,
                 rate_limit_args=NO_RETRY_RATE_LIMIT_ARGS,
             )
             if success:
@@ -411,7 +270,6 @@ async def send_status_text(
         chat_id,
         text,
         message_thread_id=thread_id,
-        reply_markup=keyboard,
         rate_limit_args=NO_RETRY_RATE_LIMIT_ARGS,
     )
     if msg is not None:
@@ -486,14 +344,13 @@ async def process_status_update(
         await clear_status_message(client, user_id, tkey)
         return
 
-    backlog_line, severe = format_backlog_status(user_id, tkey, task.window_id)
+    backlog_line, _severe = format_backlog_status(user_id, tkey, task.window_id)
     await send_status_text(
         client,
         user_id,
         tkey,
         task.window_id,
         f"{status_text}\n{backlog_line}" if backlog_line else status_text,
-        backlog_severe=severe,
     )
 
 
@@ -507,14 +364,13 @@ async def process_status_clear(
     tkey = thread_key(task.thread_id)
     status_text = format_claude_task_status(window_id, None)
     if status_text and window_id:
-        backlog_line, severe = format_backlog_status(user_id, tkey, window_id)
+        backlog_line, _severe = format_backlog_status(user_id, tkey, window_id)
         await send_status_text(
             client,
             user_id,
             tkey,
             window_id,
             f"{status_text}\n{backlog_line}" if backlog_line else status_text,
-            backlog_severe=severe,
         )
         return
     await clear_status_message(client, user_id, tkey)

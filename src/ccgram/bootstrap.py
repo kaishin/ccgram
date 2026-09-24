@@ -436,7 +436,7 @@ async def shutdown_runtime() -> None:
 def reset_for_testing() -> None:
     """Clear bootstrap module state and inner callback registrations.
 
-    Each e2e/integration test that drives ``bootstrap_application`` must
+    Each integration test that drives ``bootstrap_application`` must
     reset state between runs — F2.6 made the register_*_callbacks fail
     loud on double registration, and bootstrap caches its own
     ``_callbacks_wired`` flag too.

@@ -31,7 +31,7 @@ jobs:
       - name: Dependency check
         run: uv run deptry src
       - name: Unit tests
-        run: uv run pytest tests/ -m "not integration and not e2e" --tb=short -v --timeout=30
+        run: uv run pytest tests/ -m "not integration" --tb=short -v --timeout=30
       - name: Integration tests
         run: uv run pytest tests/integration/ -m "not llm" --tb=short -v --timeout=30
   # Advisory architecture-drift report (archfit). Non-blocking: it surfaces

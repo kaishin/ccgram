@@ -167,7 +167,6 @@ Native Windows does not provide the Unix file locking, signal handling, and term
 git clone https://github.com/alexei-led/ccgram.git && cd ccgram
 uv sync --extra dev
 make check         # lint, format, typecheck, test
-make test-e2e      # end-to-end tests (requires agent CLIs; see docs/guides.md#e2e-tests)
 ```
 
 ### Running this fork as the live bridge

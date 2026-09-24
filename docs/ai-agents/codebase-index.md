@@ -193,7 +193,7 @@ Symptom: `RuntimeError("... not wired")` or `RuntimeError("... already registere
 
 - Check `handlers/hook_events.register_stop_callback`, `handlers/status/status_bubble.register_rc_active_provider`, or `handlers/shell/shell_capture.register_approval_callback` — the wire-once/fail-loud contract raises if callee invoked before registration or if registered twice.
 - Verify `bootstrap.wire_runtime_callbacks` runs before `bootstrap.start_session_monitor`. Monitor checks `_callbacks_wired`.
-- In tests, the autouse fixture `_reset_runtime_callbacks` (in `tests/ccgram/handlers/conftest.py` and `tests/e2e/conftest.py`) resets these between tests; missing fixture is a test-setup bug.
+- In tests, the autouse fixture `_reset_runtime_callbacks` (in `tests/ccgram/handlers/conftest.py`) resets these between tests; missing fixture is a test-setup bug.
 
 Symptom: import cycle / partial-init from a clean interpreter
 

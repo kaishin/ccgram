@@ -1,4 +1,4 @@
-.PHONY: fmt lint lint-lazy test test-integration test-integration-llm test-e2e test-all typecheck deptry check install dev build clean archfit arch-guard arch-check arch-score arch-review
+.PHONY: fmt lint lint-lazy test test-integration test-integration-llm test-all typecheck deptry check install dev build clean archfit arch-guard arch-check arch-score arch-review
 
 fmt:
 	uv run ruff format src/ tests/
@@ -16,10 +16,10 @@ deptry:
 	uv run deptry src
 
 test:
-	uv run pytest tests/ -m "not integration and not e2e" -n auto --dist=worksteal
+	uv run pytest tests/ -m "not integration" -n auto --dist=worksteal
 
 test-serial:
-	uv run pytest tests/ -m "not integration and not e2e"
+	uv run pytest tests/ -m "not integration"
 
 test-integration:
 	uv run pytest tests/integration/ -m "not llm" -n auto --dist=worksteal -v
@@ -27,11 +27,8 @@ test-integration:
 test-integration-llm:
 	uv run pytest tests/integration/ -m "llm" -v
 
-test-e2e:
-	uv run pytest tests/e2e/ -v --timeout=300
-
 test-all:
-	uv run pytest tests/ -n auto --dist=worksteal -v -m "not e2e"
+	uv run pytest tests/ -n auto --dist=worksteal -v
 
 check: fmt lint typecheck deptry test test-integration
 
